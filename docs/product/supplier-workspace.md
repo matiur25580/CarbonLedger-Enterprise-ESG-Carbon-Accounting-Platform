@@ -24,3 +24,14 @@ The public route `/supplier-portal/:token` loads the questionnaire from `GET /ap
 - Evidence UI registers metadata only. It does not upload binary files, verify that an object exists, scan for malware, or provide downloads. Only register references after trusted object storage has accepted and scanned the object.
 - The UI displays 25 recent submissions and 25 suppliers per page. Supplier directory search and status filtering are applied server-side; total matching count is shown.
 - Supplier invitation email delivery remains manual.
+
+
+## Supplier review health analytics
+
+Authenticated users with supplier-directory access can retrieve the operational review-health view from `GET /api/v1/analytics/supplier-review-health`.
+
+- Supports case-insensitive supplier search, ACTIVE / INACTIVE filtering, bounded 1–100 page sizes (default 25), and UUID cursor pagination with stable name / ID ordering.
+- Returns each supplier's total submission count, latest submission timestamp, latest submission review decision, evidence count and latest evidence-review decision counts.
+- Engagement states are workflow states only: `NO_SUBMISSION`, `AWAITING_REVIEW`, `APPROVED`, `REJECTED` and `NEEDS_CHANGES`. They are not ESG scores, emissions performance ratings or compliance certifications.
+- Evidence review counts inspect at most the latest 100 evidence items per latest submission. The response exposes `evidenceReviewSampleTruncated` when more evidence exists.
+- All queries execute within the authenticated organization tenant context. The endpoint is read-only and does not change submissions, evidence or review history.
