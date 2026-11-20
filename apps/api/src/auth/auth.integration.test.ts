@@ -10,8 +10,8 @@ import { withTenantContext } from "./tenant-context.js";
 
 const createdUsers: string[] = [];
 const createdOrganizations: string[] = [];
-const adminPrisma = env.DATABASE_URL
-  ? new PrismaClient({ datasources: { db: { url: env.DATABASE_URL } } })
+const adminPrisma = env.DATABASE_ADMIN_URL
+  ? new PrismaClient({ datasources: { db: { url: env.DATABASE_ADMIN_URL } } })
   : null;
 
 after(async () => {
