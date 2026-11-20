@@ -6,7 +6,7 @@ Measure emissions. Govern sustainability data. Track reduction initiatives. Prod
 
 CarbonLedger is an enterprise software project built with the **PERN stack**: PostgreSQL, Express.js, React.js and Node.js. It is designed to help organizations collect activity data, calculate greenhouse-gas (GHG) emissions, manage suppliers and evidence, monitor reduction targets, and prepare structured sustainability disclosures.
 
-> **Project status:** Phases 0–14 implemented; Phase 15 security hardening is in progress. Latest additions include layered API rate limits, a patched Vite version range, safer localhost-only development binding, and weekly Dependabot update checks.
+> **Project status:** Phases 0–14 implemented; Phase 15 security hardening and Phase 16 data-quality intelligence are in progress. Latest additions include layered API rate limits, a patched Vite version range, safer localhost-only development binding, weekly Dependabot update checks, and tenant-scoped activity quality diagnostics.
 
 ## Product goals
 
@@ -145,6 +145,10 @@ Activity records retain facility, reporting period, quantity, unit, category, sc
 - GET `/api/v1/calculations/:runId` — retrieve immutable run and result snapshots
 
 The engine uses Decimal arithmetic, a strict unit-conversion registry, country-specific factor preference with GLOBAL fallback, date-valid published factors, deterministic request fingerprints and append-only snapshots. Unsupported units, missing factors and ambiguous factor matches fail closed. No sample emission factors are bundled; organizations must provide source-backed factors. See `docs/domain/calculation-engine.md`.
+
+## Data quality intelligence (Phase 16)
+
+The analytics API now includes `GET /api/v1/analytics/data-quality?from=YYYY-MM-DD&to=YYYY-MM-DD[&facilityId=<uuid>]`. It returns a transparent 0–100 heuristic score, issue counts and record-level findings for possible duplicates, missing source references, stale drafts, overdue reviews, approved-but-uncalculated activity and statistical quantity outliers. Analysis is capped at 5,000 records and reports truncation. Findings are review signals—not automatic corrections or proof of non-compliance. See `docs/domain/analytics-and-reporting.md`.
 
 ## Activity data imports (Phase 5)
 
