@@ -27,7 +27,12 @@ describe("API environment schema", () => {
     assert.equal(result.success, false);
   });
 
-  it("rejects a missing database URL", () => {
+  it("does not require migration credentials in the API runtime", () => {
+    const result = envSchema.safeParse({ ...validEnv, DATABASE_URL: undefined });
+    assert.equal(result.success, true);
+  });
+
+  it("rejects a missing application database URL", () => {
     const result = envSchema.safeParse({ ...validEnv, APP_DATABASE_URL: undefined });
     assert.equal(result.success, false);
   });
