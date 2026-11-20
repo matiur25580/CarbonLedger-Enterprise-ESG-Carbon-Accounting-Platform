@@ -24,12 +24,6 @@ calculationRouter.post("/", requireRole("OWNER", "ADMIN", "MEMBER", "AUDITOR"), 
       if (activities.length !== parsed.data.activityRecordIds.length) {
         return { error: "ACTIVITY_NOT_APPROVED_OR_NOT_FOUND" as const };
       }
-      const fingerprint = calculationFingerprint(auth.organizationId, activities, "facility-country");
-      const existing = await tx.calculationRun.findFirst({
-        where: { organizationId: auth.organizationId, fingerprint },
-        include: { results: { include: { factor: { select: { code: true, version: true, sourceName: true, sourceVersion: true } } } } }
-      });
-      if (existing) return { run: existing, reused: true };
       const results = [];
       for (const activity of activities) {
         const factors = await tx.emissionFactor.findMany({
@@ -56,6 +50,13 @@ calculationRouter.post("/", requireRole("OWNER", "ADMIN", "MEMBER", "AUDITOR"), 
           factorValue: factor.kgCo2ePerUnit, kgCo2e: calculated.kgCo2e, snapshot
         });
       }
+      const factorSignature = results.map((item) => `${item.emissionFactorId}:${item.factorValue.toString()}`).sort().join("|");
+      const fingerprint = calculationFingerprint(auth.organizationId, activities, "facility-country", factorSignature);
+      const existing = await tx.calculationRun.findFirst({
+        where: { organizationId: auth.organizationId, fingerprint },
+        include: { results: { include: { factor: { select: { code: true, version: true, sourceName: true, sourceVersion: true } } } } }
+      });
+      if (existing) return { run: existing, reused: true };
       const run = await tx.calculationRun.create({
         data: { organizationId: auth.organizationId, fingerprint, engineVersion: CALCULATION_ENGINE_VERSION, requestedCount: activities.length, createdByUserId: auth.userId, results: { create: results } },
         include: { results: { include: { factor: { select: { code: true, version: true, sourceName: true, sourceVersion: true } } } } }
