@@ -73,6 +73,13 @@ enum SupplierReviewDecision {
   NEEDS_CHANGES
 }
 
+enum InitiativeStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id            String                   @id @default(uuid()) @db.Uuid
   name          String                   @db.VarChar(100)
@@ -117,6 +124,9 @@ model Organization {
   supplierSubmissions SupplierSubmission[]
   supplierEvidence SupplierEvidence[]
   supplierSubmissionReviews SupplierSubmissionReview[]
+  reductionTargets ReductionTarget[]
+  reductionInitiatives ReductionInitiative[]
+  reductionScenarios ReductionScenario[]
 
   @@map("organizations")
 }
@@ -441,4 +451,64 @@ model SupplierSubmissionReview {
   @@unique([id, organizationId])
   @@index([organizationId, submissionId, createdAt])
   @@map("supplier_submission_reviews")
+}
+
+
+model ReductionTarget {
+  id                    String   @id @default(uuid()) @db.Uuid
+  organizationId        String   @map("organization_id") @db.Uuid
+  name                  String   @db.VarChar(180)
+  scope                 EmissionScope
+  baselineYear          Int      @map("baseline_year")
+  targetYear            Int      @map("target_year")
+  baselineKgCo2e        Decimal  @map("baseline_kg_co2e") @db.Decimal(38, 18)
+  reductionPercent      Decimal  @map("reduction_percent") @db.Decimal(7, 4)
+  createdByUserId       String   @map("created_by_user_id") @db.Uuid
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  initiatives           ReductionInitiative[]
+  scenarios             ReductionScenario[]
+  @@unique([id, organizationId])
+  @@index([organizationId, targetYear])
+  @@map("reduction_targets")
+}
+
+model ReductionInitiative {
+  id                       String @id @default(uuid()) @db.Uuid
+  organizationId           String @map("organization_id") @db.Uuid
+  targetId                 String @map("target_id") @db.Uuid
+  name                     String @db.VarChar(180)
+  description              String? @db.VarChar(2000)
+  status                   InitiativeStatus @default(PLANNED)
+  expectedAnnualReductionKg Decimal @map("expected_annual_reduction_kg") @db.Decimal(38, 18)
+  startDate                DateTime? @map("start_date") @db.Date
+  endDate                  DateTime? @map("end_date") @db.Date
+  createdByUserId          String @map("created_by_user_id") @db.Uuid
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+  organization             Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  target                   ReductionTarget @relation(fields: [targetId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  @@unique([id, organizationId])
+  @@index([organizationId, targetId, status])
+  @@map("reduction_initiatives")
+}
+
+model ReductionScenario {
+  id                    String @id @default(uuid()) @db.Uuid
+  organizationId        String @map("organization_id") @db.Uuid
+  targetId              String @map("target_id") @db.Uuid
+  name                  String @db.VarChar(180)
+  baselineKgCo2e        Decimal @map("baseline_kg_co2e") @db.Decimal(38, 18)
+  plannedReductionKg    Decimal @map("planned_reduction_kg") @db.Decimal(38, 18)
+  projectedKgCo2e       Decimal @map("projected_kg_co2e") @db.Decimal(38, 18)
+  targetKgCo2e          Decimal @map("target_kg_co2e") @db.Decimal(38, 18)
+  assumptions           Json
+  createdByUserId       String @map("created_by_user_id") @db.Uuid
+  createdAt             DateTime @default(now()) @map("created_at")
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  target                ReductionTarget @relation(fields: [targetId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  @@unique([id, organizationId])
+  @@index([organizationId, targetId, createdAt])
+  @@map("reduction_scenarios")
 }
