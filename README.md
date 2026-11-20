@@ -86,6 +86,12 @@ The Compose initialization script provisions a bootstrap administrator, a non-su
 
 The local database credentials in `.env.example` are for development only. Never reuse them in a deployed environment.
 
+## Web application and analytics workspace (Phase 12)
+
+The React application now includes organization registration, sign-in, HttpOnly refresh-cookie session restoration, in-memory access-token handling, and a responsive ESG overview dashboard connected to `GET /api/v1/analytics/overview`. It visualizes calculation-backed emissions totals, monthly trend, Scope 1/2/3 mix, facility footprint, supplier submission coverage and reduction scenario snapshots. The reporting period is configurable and users can export the corresponding emissions CSV.
+
+Navigation for Emissions, Activity data, Facilities, Suppliers, Reduction plans and Audit & compliance is currently a product shell; these dedicated frontend workspaces are not yet implemented. No demo emissions values are fabricated. See `docs/product/web-dashboard.md`.
+
 ## Identity and organization API (Phase 2)
 
 Authentication endpoints are available under `/api/v1/auth`:
