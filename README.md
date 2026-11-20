@@ -317,6 +317,7 @@ Deployment is intentionally left to the repository owner. Before manually deploy
 - [Web dashboard](docs/product/web-dashboard.md)
 - [Activity data workspace](docs/product/activity-data-workspace.md)
 - [Supplier workspace](docs/product/supplier-workspace.md)
+- [Reduction planning workspace](docs/product/reduction-planning-workspace.md)
 - [Calculation engine](docs/domain/calculation-engine.md)
 - [Data quality and reporting](docs/domain/analytics-and-reporting.md)
 - [Webhook delivery worker](docs/domain/webhook-delivery-worker.md)\n- [Supplier invitation email delivery](docs/security/supplier-invitation-email.md)
