@@ -4,6 +4,7 @@ import { prisma } from "../lib/prisma.js";
 import { hashPassword, verifyPassword } from "./password.js";
 import { createRefreshToken, hashRefreshToken, issueAccessToken } from "./tokens.js";
 import { withTenantContext } from "./tenant-context.js";
+import { withUserContext } from "./user-context.js";
 
 const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -29,15 +30,9 @@ export async function register(input: {
 
   try {
     const user = await withTenantContext(organizationId, async (tx) => {
-      const created = await tx.user.create({
-        data: { name: input.name, email: input.email, passwordHash }
-      });
-      await tx.organization.create({
-        data: { id: organizationId, name: input.organizationName, slug: input.organizationSlug }
-      });
-      await tx.organizationMembership.create({
-        data: { organizationId, userId: created.id, role: OrgRole.OWNER }
-      });
+      const created = await tx.user.create({ data: { name: input.name, email: input.email, passwordHash } });
+      await tx.organization.create({ data: { id: organizationId, name: input.organizationName, slug: input.organizationSlug } });
+      await tx.organizationMembership.create({ data: { organizationId, userId: created.id, role: OrgRole.OWNER } });
       await tx.auditLog.create({
         data: { organizationId, actorUserId: created.id, action: "organization.created", resourceType: "organization", resourceId: organizationId }
       });
@@ -58,18 +53,16 @@ export async function login(input: { email: string; password: string }) {
   if (!user || user.status !== "ACTIVE" || !(await verifyPassword(input.password, user.passwordHash))) {
     throw new Error("INVALID_CREDENTIALS");
   }
-  const membership = await prisma.organizationMembership.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
-    include: { organization: { select: { id: true, name: true, slug: true } } }
-  });
+  const membership = await withUserContext(user.id, (tx) =>
+    tx.organizationMembership.findFirst({
+      where: { userId: user.id },
+      orderBy: { createdAt: "asc" },
+      include: { organization: { select: { id: true, name: true, slug: true } } }
+    })
+  );
   if (!membership) throw new Error("NO_ACTIVE_ORGANIZATION");
   const session = await createSession(user.id, membership.organizationId);
-  return {
-    user: { id: user.id, name: user.name, email: user.email },
-    organization: { ...membership.organization, role: membership.role },
-    ...session
-  };
+  return { user: { id: user.id, name: user.name, email: user.email }, organization: { ...membership.organization, role: membership.role }, ...session };
 }
 
 export async function rotateRefreshToken(token: string) {
@@ -79,11 +72,13 @@ export async function rotateRefreshToken(token: string) {
 
   const nextToken = createRefreshToken();
   const nextHash = hashRefreshToken(nextToken);
-  const organization = await prisma.organizationMembership.findFirst({
-    where: { userId: existing.userId },
-    orderBy: { createdAt: "asc" },
-    select: { organizationId: true }
-  });
+  const organization = await withUserContext(existing.userId, (tx) =>
+    tx.organizationMembership.findFirst({
+      where: { userId: existing.userId },
+      orderBy: { createdAt: "asc" },
+      select: { organizationId: true }
+    })
+  );
   if (!organization) throw new Error("NO_ACTIVE_ORGANIZATION");
 
   const rotated = await prisma.$transaction(async (tx) => {
@@ -92,38 +87,34 @@ export async function rotateRefreshToken(token: string) {
       data: { revokedAt: new Date(), replacedByTokenHash: nextHash }
     });
     if (result.count !== 1) return false;
-    await tx.refreshToken.create({
-      data: { userId: existing.userId, tokenHash: nextHash, expiresAt: new Date(Date.now() + REFRESH_TTL_MS) }
-    });
+    await tx.refreshToken.create({ data: { userId: existing.userId, tokenHash: nextHash, expiresAt: new Date(Date.now() + REFRESH_TTL_MS) } });
     return true;
   });
   if (!rotated) throw new Error("INVALID_REFRESH_TOKEN");
-  return {
-    accessToken: issueAccessToken({ sub: existing.userId, organizationId: organization.organizationId, jti: randomUUID() }),
-    refreshToken: nextToken
-  };
+  return { accessToken: issueAccessToken({ sub: existing.userId, organizationId: organization.organizationId, jti: randomUUID() }), refreshToken: nextToken };
 }
 
 export async function revokeRefreshToken(token: string): Promise<void> {
-  await prisma.refreshToken.updateMany({
-    where: { tokenHash: hashRefreshToken(token), revokedAt: null },
-    data: { revokedAt: new Date() }
-  });
+  await prisma.refreshToken.updateMany({ where: { tokenHash: hashRefreshToken(token), revokedAt: null }, data: { revokedAt: new Date() } });
 }
 
 export async function listUserOrganizations(userId: string) {
-  return prisma.organizationMembership.findMany({
-    where: { userId },
-    include: { organization: { select: { id: true, name: true, slug: true } } },
-    orderBy: { createdAt: "asc" }
-  });
+  return withUserContext(userId, (tx) =>
+    tx.organizationMembership.findMany({
+      where: { userId },
+      include: { organization: { select: { id: true, name: true, slug: true } } },
+      orderBy: { createdAt: "asc" }
+    })
+  );
 }
 
 export async function switchOrganization(userId: string, organizationId: string) {
-  const membership = await prisma.organizationMembership.findUnique({
-    where: { organizationId_userId: { organizationId, userId } },
-    include: { organization: { select: { id: true, name: true, slug: true } } }
-  });
+  const membership = await withUserContext(userId, (tx) =>
+    tx.organizationMembership.findUnique({
+      where: { organizationId_userId: { organizationId, userId } },
+      include: { organization: { select: { id: true, name: true, slug: true } } }
+    })
+  );
   if (!membership) throw new Error("ORGANIZATION_ACCESS_DENIED");
   return {
     organization: { ...membership.organization, role: membership.role },
@@ -132,7 +123,7 @@ export async function switchOrganization(userId: string, organizationId: string)
 }
 
 export async function getCurrentOrganization(organizationId: string) {
-  return withTenantContext(organizationId, async (tx) =>
+  return withTenantContext(organizationId, (tx) =>
     tx.organization.findUnique({ where: { id: organizationId }, select: { id: true, name: true, slug: true, createdAt: true } })
   );
 }
