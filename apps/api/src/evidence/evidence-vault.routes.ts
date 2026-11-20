@@ -63,7 +63,14 @@ evidenceVaultRouter.get("/submissions/:submissionId/evidence/:evidenceId/downloa
   if(!submissionId.success||!evidenceId.success){res.status(400).json({error:{code:"VALIDATION_ERROR",message:"Invalid evidence reference"}});return;}
   try{
     const auth=(req as AuthRequest).auth!;
-    const evidence=await withTenantContext(auth.organizationId,tx=>tx.supplierEvidence.findFirst({where:{id:evidenceId.data,submissionId:submissionId.data,organizationId:auth.organizationId,storageProvider:"s3"},select:{id:true,objectKey:true,fileName:true}}));
+    const evidence=await withTenantContext(auth.organizationId,async tx=>{
+      const record=await tx.supplierEvidence.findFirst({where:{id:evidenceId.data,submissionId:submissionId.data,organizationId:auth.organizationId,storageProvider:"s3"},select:{id:true,objectKey:true,fileName:true}});
+      if(!record)return null;
+      // Legacy metadata registration remains available, so require the scan-success audit
+      // event created atomically by the vault completion flow before issuing a URL.
+      const scanEvent=await tx.auditLog.findFirst({where:{organizationId:auth.organizationId,resourceType:"supplier_evidence",resourceId:record.id,action:"supplier.evidence_scanned_and_registered"},select:{id:true}});
+      return scanEvent?record:null;
+    });
     if(!evidence){res.status(404).json({error:{code:"EVIDENCE_NOT_FOUND",message:"Scanned evidence not found"}});return;}
     const url=await createEvidenceDownloadUrl(evidence.objectKey);
     await withTenantContext(auth.organizationId,tx=>tx.auditLog.create({data:{organizationId:auth.organizationId,actorUserId:auth.userId,action:"supplier.evidence_download_url_issued",resourceType:"supplier_evidence",resourceId:evidence.id,metadata:{fileName:evidence.fileName,expiresInSeconds:60}}}));
