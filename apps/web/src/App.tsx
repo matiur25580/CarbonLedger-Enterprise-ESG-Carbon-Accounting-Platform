@@ -291,9 +291,9 @@ function SupplierWorkspace({session}:{session:Session}) {
    request<{questionnaires:Questionnaire[]}>("/suppliers/questionnaires"),
    request<{submissions:Submission[];nextCursor:string|null}>(`/suppliers/submissions?limit=25${submissionCursor?"&cursor="+submissionCursor:""}`)
   ]);
-  setSuppliers(a.suppliers);setSupplierTotal(a.totalCount);setSupplierNextCursor(a.nextCursor);setActiveSuppliers(d.suppliers);
+  setSuppliers(a.suppliers);setSupplierTotal(a.totalCount);setSupplierNextCursor(a.nextCursor);setActiveSuppliers(b.suppliers);
   setQuestionnaires(c.questionnaires);setSubmissions(d.submissions);setSubmissionNextCursor(d.nextCursor);
-  setInviteSupplier(v=>v||d.suppliers.find(x=>x.status==="ACTIVE")?.id||"");setInviteQuestionnaire(v=>v||c.questionnaires.find(x=>x.isPublished)?.id||"");
+  setInviteSupplier(v=>v||b.suppliers.find(x=>x.status==="ACTIVE")?.id||"");setInviteQuestionnaire(v=>v||c.questionnaires.find(x=>x.isPublished)?.id||"");
   setSelected(v=>d.submissions.find(x=>x.id===v?.id)??d.submissions[0]??null);
  }catch(e){setError(e instanceof Error?e.message:"Unable to load supplier workspace");}finally{setLoading(false);}},[submissionCursor,supplierCursor,appliedSupplierQuery,appliedSupplierStatus]);
  useEffect(()=>{void load();},[load]);
