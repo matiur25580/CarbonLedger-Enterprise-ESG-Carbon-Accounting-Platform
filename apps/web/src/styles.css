@@ -159,3 +159,17 @@
 .quality-table td:last-child{min-width:230px;max-width:430px;white-space:normal;line-height:1.5}
 @media(max-width:1100px){.quality-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.quality-summary-grid,.quality-breakdown-grid{grid-template-columns:1fr}.quality-score-card{min-height:130px}.quality-table td:last-child{min-width:180px}}
+
+/* Emission-factor catalogue workspace */
+.factor-filters,.factor-create-panel,.factor-table-panel{margin-bottom:14px}
+.factor-filter-controls{display:grid;grid-template-columns:1fr 1.3fr .8fr;gap:12px}
+.factor-filter-controls label,.factor-form label{display:grid;gap:7px;color:#53685a;font-size:10px;font-weight:650}
+.factor-filter-controls input,.factor-filter-controls select,.factor-form input,.factor-form select,.factor-form textarea{width:100%;min-height:39px;padding:9px 11px;border:1px solid #dfe7df;border-radius:7px;background:#fff;color:#33483a;font:11px "DM Sans",sans-serif}
+.factor-form{display:grid;gap:14px;margin-top:15px;padding-top:15px;border-top:1px solid #edf1ec}
+.factor-form .form-grid{margin-top:0}.factor-form textarea{resize:vertical}.factor-form .primary-button{margin-left:auto;min-width:180px}
+.factor-form-note{margin:0;padding:10px 12px;border-radius:7px;background:#f5f7f2;color:#778579;font-size:10px;line-height:1.5}
+.factor-table td{white-space:normal;min-width:105px}.factor-table td:first-child{min-width:180px}.factor-table td:nth-child(5){min-width:180px}
+.factor-table td small{display:block;margin-top:5px;color:#929d94;font-size:9px;line-height:1.4}.factor-table td a{display:inline-block;margin-top:5px;color:#4d7957;font-size:9px;text-decoration:none}
+.factor-actions{display:flex;gap:5px;margin-top:7px}
+@media(max-width:900px){.factor-filter-controls{grid-template-columns:1fr 1fr}.factor-filter-controls label:last-child{grid-column:1/-1}}
+@media(max-width:600px){.factor-filter-controls{grid-template-columns:1fr}.factor-filter-controls label:last-child{grid-column:auto}.factor-form .form-grid{grid-template-columns:1fr}.factor-form .primary-button{width:100%}}
