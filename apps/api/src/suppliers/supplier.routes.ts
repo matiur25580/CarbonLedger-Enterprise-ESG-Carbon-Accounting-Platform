@@ -7,6 +7,7 @@ import { AuthRequest, requireRole } from "../auth/auth.middleware.js";
 import { withTenantContext } from "../auth/tenant-context.js";
 import { env } from "../config/env.js";
 import { enqueueWebhookEvent } from "../webhooks/webhook-outbox.js";
+import { encryptInvitationEmail } from "./invitation-email.js";
 
 export const supplierRouter = Router();
 const uuid = z.string().uuid();
@@ -188,11 +189,17 @@ supplierRouter.post("/:supplierId/invitations",requireRole("OWNER","ADMIN"),asyn
       const expiresAt=new Date(Date.now()+7*24*60*60*1000);
       const token=issuePortalToken({organizationId:auth.organizationId,supplierId:supplier.id,invitationId});
       await tx.supplierInvitation.create({data:{id:invitationId,organizationId:auth.organizationId,supplierId:supplier.id,questionnaireId:questionnaire.id,tokenHash:tokenHash(token),expiresAt}});
-      await tx.auditLog.create({data:{organizationId:auth.organizationId,actorUserId:auth.userId,action:"supplier.invitation_created",resourceType:"supplier_invitation",resourceId:invitationId,metadata:{supplierId:supplier.id,questionnaireId:questionnaire.id,expiresAt:expiresAt.toISOString()}}});
-      return {id:invitationId,token,expiresAt,supplierEmail:supplier.contactEmail};
+      let delivery:"QUEUED"|"NOT_CONFIGURED"="NOT_CONFIGURED";
+      if(env.RESEND_API_KEY&&env.EMAIL_FROM&&env.SUPPLIER_EMAIL_ENCRYPTION_KEY){
+        const encrypted=encryptInvitationEmail({recipient:supplier.contactEmail,supplierName:supplier.name,questionnaireTitle:questionnaire.title,portalUrl:`${env.WEB_ORIGIN.replace(/\/$/,"")}/supplier-portal/${token}`,expiresAt:expiresAt.toISOString()});
+        await tx.supplierInvitationEmail.create({data:{organizationId:auth.organizationId,invitationId,recipient:supplier.contactEmail,...encrypted}});
+        delivery="QUEUED";
+      }
+      await tx.auditLog.create({data:{organizationId:auth.organizationId,actorUserId:auth.userId,action:"supplier.invitation_created",resourceType:"supplier_invitation",resourceId:invitationId,metadata:{supplierId:supplier.id,questionnaireId:questionnaire.id,expiresAt:expiresAt.toISOString(),deliveryStatus:delivery}}});
+      return {id:invitationId,token,expiresAt,supplierEmail:supplier.contactEmail,delivery};
     });
     if(!invitation){res.status(404).json({error:{code:"SUPPLIER_OR_QUESTIONNAIRE_UNAVAILABLE",message:"Active supplier or published questionnaire not found"}});return}
-    res.status(201).json({invitation:{id:invitation.id,portalToken:invitation.token,expiresAt:invitation.expiresAt,deliveryStatus:"NOT_SENT",recipient:invitation.supplierEmail}});
+    res.status(201).json({invitation:{id:invitation.id,...(invitation.delivery==="QUEUED"?{}:{portalToken:invitation.token}),expiresAt:invitation.expiresAt,deliveryStatus:invitation.delivery,recipient:invitation.supplierEmail}});
   }catch(error){next(error)}
 });
 supplierRouter.get("/submissions",requireRole("OWNER","ADMIN","MEMBER","AUDITOR"),async(req,res,next)=>{
@@ -202,4 +209,13 @@ supplierRouter.get("/submissions",requireRole("OWNER","ADMIN","MEMBER","AUDITOR"
     const submissions=await withTenantContext(auth.organizationId,tx=>tx.supplierSubmission.findMany({where:{organizationId:auth.organizationId},take:query.data.limit,orderBy:{submittedAt:"desc"},include:{supplier:{select:{id:true,name:true,contactEmail:true}},questionnaire:{select:{id:true,title:true,version:true}}}}));
     res.status(200).json({submissions});
   }catch(error){next(error)}
+});
+
+supplierRouter.get("/invitations/:invitationId/delivery",requireRole("OWNER","ADMIN","MEMBER","AUDITOR"),async(req,res,next)=>{
+ const id=uuid.safeParse(req.params.invitationId);if(!id.success){res.status(400).json({error:{code:"VALIDATION_ERROR",message:"Invalid invitation ID"}});return;}
+ try{const auth=(req as AuthRequest).auth!;
+  const delivery=await withTenantContext(auth.organizationId,tx=>tx.supplierInvitationEmail.findFirst({where:{invitationId:id.data,organizationId:auth.organizationId},select:{id:true,status:true,attempts:true,nextAttemptAt:true,sentAt:true,createdAt:true,updatedAt:true}}));
+  if(!delivery){res.status(404).json({error:{code:"EMAIL_DELIVERY_NOT_FOUND",message:"Email delivery record not found; email delivery may not be configured"}});return;}
+  res.status(200).json({delivery});
+ }catch(error){next(error)}
 });
