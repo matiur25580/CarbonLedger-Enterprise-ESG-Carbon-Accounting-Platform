@@ -68,6 +68,7 @@ model User {
   facilitiesCreated Facility[]           @relation("FacilityCreator")
   activitiesCreated ActivityRecord[]     @relation("ActivityCreator")
   activitiesReviewed ActivityRecord[]    @relation("ActivityReviewer")
+  calculationRunsCreated CalculationRun[] @relation("CalculationCreator")
   factorsCreated EmissionFactor[]        @relation("FactorCreator")
 
   @@map("users")
@@ -85,6 +86,8 @@ model Organization {
   facilities    Facility[]
   activities    ActivityRecord[]
   emissionFactors EmissionFactor[]
+  calculationRuns CalculationRun[]
+  calculationResults CalculationResult[]
 
   @@map("organizations")
 }
@@ -152,6 +155,7 @@ model Facility {
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   createdBy       User         @relation("FacilityCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   activities      ActivityRecord[]
+  calculationResults CalculationResult[]
 
   @@unique([organizationId, code])
   @@unique([id, organizationId])
@@ -185,6 +189,7 @@ model ActivityRecord {
   reviewedBy       User?            @relation("ActivityReviewer", fields: [reviewedByUserId], references: [id], onDelete: Restrict)
 
   @@index([organizationId, periodStart, periodEnd])
+  @@unique([id, organizationId])
   @@index([organizationId, facilityId, category, status])
   @@map("activity_records")
 }
@@ -219,5 +224,51 @@ model EmissionFactor {
   @@unique([id, organizationId])
   @@index([organizationId, category, geographyCode, status])
   @@index([organizationId, validFrom, validTo])
+  calculationResults CalculationResult[]
+
   @@map("emission_factors")
+}
+
+model CalculationRun {
+  id              String   @id @default(uuid()) @db.Uuid
+  organizationId  String   @map("organization_id") @db.Uuid
+  fingerprint     String   @db.Char(64)
+  engineVersion   String   @map("engine_version") @db.VarChar(40)
+  requestedCount  Int      @map("requested_count")
+  createdByUserId String   @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at")
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  createdBy       User @relation("CalculationCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  results         CalculationResult[]
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, fingerprint])
+  @@index([organizationId, createdAt])
+  @@map("calculation_runs")
+}
+
+model CalculationResult {
+  id                   String   @id @default(uuid()) @db.Uuid
+  organizationId       String   @map("organization_id") @db.Uuid
+  calculationRunId     String   @map("calculation_run_id") @db.Uuid
+  activityRecordId     String   @map("activity_record_id") @db.Uuid
+  emissionFactorId     String   @map("emission_factor_id") @db.Uuid
+  activityQuantity     Decimal  @map("activity_quantity") @db.Decimal(20, 6)
+  activityUnit         String   @map("activity_unit") @db.VarChar(40)
+  normalizedQuantity  Decimal  @map("normalized_quantity") @db.Decimal(30, 12)
+  factorUnit           String   @map("factor_unit") @db.VarChar(40)
+  conversionMultiplier Decimal  @map("conversion_multiplier") @db.Decimal(30, 18)
+  conversionPath       Json     @map("conversion_path")
+  factorValue          Decimal  @map("factor_value") @db.Decimal(24, 12)
+  kgCo2e               Decimal  @map("kg_co2e") @db.Decimal(38, 18)
+  snapshot             Json
+  createdAt            DateTime @default(now()) @map("created_at")
+  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  run                  CalculationRun @relation(fields: [calculationRunId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  activity             ActivityRecord @relation(fields: [activityRecordId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  factor               EmissionFactor @relation(fields: [emissionFactorId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  @@unique([calculationRunId, activityRecordId])
+  @@index([organizationId, activityRecordId, createdAt])
+  @@map("calculation_results")
 }
