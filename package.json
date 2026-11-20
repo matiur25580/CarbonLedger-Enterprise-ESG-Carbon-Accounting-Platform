@@ -4,7 +4,9 @@
   "private": true,
   "description": "Enterprise ESG, carbon accounting and sustainability intelligence platform",
   "packageManager": "pnpm@10.0.0",
-  "engines": { "node": ">=22.0.0" },
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "dev": "pnpm --parallel --filter @carbonledger/api --filter @carbonledger/web dev",
     "dev:api": "pnpm --filter @carbonledger/api dev",
@@ -21,5 +23,11 @@
   },
   "devDependencies": {
     "dotenv-cli": "^8.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "@babel/parser": "7.29.14",
+      "@babel/traverse": "7.29.14"
+    }
   }
 }
