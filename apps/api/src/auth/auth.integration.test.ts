@@ -154,6 +154,28 @@ describe("facility, activity and factor tenancy", () => {
     assert.equal(factor.version, 1);
     assert.equal(activity.status, "DRAFT");
 
+    await withTenantContext(account.organization.id, (tx) =>
+      tx.emissionFactor.update({
+        where: { id: factor.id },
+        data: { status: "PUBLISHED", publishedAt: new Date() }
+      })
+    );
+    await assert.rejects(
+      withTenantContext(account.organization.id, (tx) =>
+        tx.emissionFactor.update({
+          where: { id: factor.id },
+          data: { kgCo2ePerUnit: "0.900000000000" }
+        })
+      )
+    );
+    const retiredFactor = await withTenantContext(account.organization.id, (tx) =>
+      tx.emissionFactor.update({
+        where: { id: factor.id },
+        data: { status: "RETIRED" }
+      })
+    );
+    assert.equal(retiredFactor.status, "RETIRED");
+
     const visibleActivity = await withTenantContext(account.organization.id, (tx) =>
       tx.activityRecord.findUnique({ where: { id: activity.id } })
     );
