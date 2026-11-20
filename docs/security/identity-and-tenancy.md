@@ -23,7 +23,7 @@
 - Never use session-level SET on pooled connections. Use transaction-local set_config(..., true) only.
 
 ## Production database roles
-The application runtime role (`carbonledger_app`) is provisioned as a dedicated non-superuser role without BYPASSRLS and does not own tenant tables. Prisma migration commands use the separate administrator/migration connection (`DATABASE_URL`); the API process needs only `APP_DATABASE_URL` and must not receive the migration credential in production. Production must replace both local development credentials with separately managed roles and secrets. PostgreSQL superusers always bypass RLS, so do not run the application as a superuser. The local Docker Compose account is a development convenience and is not a production credential.
+The application runtime role (`carbonledger_app`) is provisioned as a dedicated non-superuser role without BYPASSRLS and does not own tenant tables. Local development provisions three identities: a bootstrap administrator (`DATABASE_ADMIN_URL`), a non-superuser migration role (`DATABASE_URL`) and the restricted application role (`APP_DATABASE_URL`). The API process needs only `APP_DATABASE_URL` and must not receive either privileged connection in production. Production must use separately managed migration and runtime roles; the bootstrap administrator is for provisioning only. PostgreSQL superusers always bypass RLS, so do not run the application as a superuser. The local Docker Compose account is a development convenience and is not a production credential.
 
 ## Operational controls still required before production
 - Registration, login and refresh have per-process rate limits; production multi-instance deployments must use a shared rate-limit store and centralized abuse monitoring.
