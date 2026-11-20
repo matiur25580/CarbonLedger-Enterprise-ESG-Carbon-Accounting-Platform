@@ -465,7 +465,7 @@ function AuditWorkspace({ session }: { session: Session }) {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState("");
-  const [exportInfo, setExportInfo] = useState<{ count: string; digest: string } | null>(null);
+  const [exportInfo, setExportInfo] = useState<{ count: string; digest: string; verified: boolean } | null>(null);
   const canAccess = ["OWNER", "ADMIN", "AUDITOR"].includes(session.organization.role);
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -504,13 +504,15 @@ function AuditWorkspace({ session }: { session: Session }) {
       const digest = response.headers.get("X-Content-SHA256") ?? "";
       const count = response.headers.get("X-Export-Record-Count") ?? "unknown";
       const blob = await response.blob();
+      const digestBytes = await crypto.subtle.digest("SHA-256", await blob.arrayBuffer());
+      const localDigest = Array.from(new Uint8Array(digestBytes)).map(byte => byte.toString(16).padStart(2, "0")).join("");
       const objectUrl = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = objectUrl;
       anchor.download = "carbonledger-audit-" + filters.from + "-to-" + filters.to + ".csv";
       anchor.click();
       URL.revokeObjectURL(objectUrl);
-      setExportInfo({ count, digest });
+      setExportInfo({ count, digest, verified: Boolean(digest) && localDigest === digest.toLowerCase() });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Audit export failed");
     } finally { setExporting(false); }
@@ -535,7 +537,7 @@ function AuditWorkspace({ session }: { session: Session }) {
       <div className="audit-filter-actions"><button className="primary-button compact-button" type="submit" disabled={loading}>Apply filters</button><button className="table-action" type="button" disabled={loading || exporting} onClick={() => { setFrom(dateString(new Date(Date.now() - 29 * 86400000))); setTo(dateInput()); setAction(""); setResourceType(""); setPage(current => ({ ...current, offset: 0 })); setFilters({ from: dateString(new Date(Date.now() - 29 * 86400000)), to: dateInput(), action: "", resourceType: "" }); setExportInfo(null); }}>Reset</button><button className="export-button" type="button" onClick={() => void exportCsv()} disabled={exporting || !from || !to}>{exporting ? <><Spinner /> Preparing export</> : "↓ Export audit CSV"}</button></div>
     </form>
     {error && <div className="notice-error" role="alert">{error}</div>}
-    {exportInfo && <div className="notice-success audit-export-result" role="status"><b>Audit CSV downloaded.</b><span>{exportInfo.count} records · SHA-256: <code>{exportInfo.digest || "Not supplied"}</code></span><small>The digest checks the downloaded file against the server-provided export digest. It is not a persisted hash chain or independent assurance.</small></div>}
+    {exportInfo && <div className="notice-success audit-export-result" role="status"><b>{exportInfo.verified ? "Audit CSV downloaded · SHA-256 verified." : "Audit CSV downloaded · SHA-256 could not be verified."}</b><span>{exportInfo.count} records · SHA-256: <code>{exportInfo.digest || "Not supplied"}</code></span><small>The digest checks the downloaded file against the server-provided export digest. It is not a persisted hash chain or independent assurance.</small></div>}
     <section className="panel workspace-panel audit-events-panel">
       <div className="panel-heading"><div><span className="section-kicker">IMMUTABLE EVENT REGISTER</span><h2>{number(page.total)} matching events</h2></div><span className="unit-label">TENANT SCOPED</span></div>
       {loading ? <div className="chart-loading"><Spinner /> Loading audit events…</div> : events.length === 0 ? <div className="empty-inline">No audit events match this date range and filter combination.</div> : <div className="table-scroll"><table className="workspace-table audit-table"><thead><tr><th>Occurred</th><th>Actor</th><th>Action</th><th>Resource</th><th>Recorded metadata</th></tr></thead><tbody>{events.map(event => <tr key={event.id}><td><b>{new Date(event.createdAt).toLocaleDateString()}</b><small>{new Date(event.createdAt).toLocaleTimeString()}</small></td><td>{event.actor?.name ?? "System / unavailable"}<small>{event.actor?.email ?? event.actorUserId ?? "No actor reference"}</small></td><td><span className="audit-action-label">{event.action}</span></td><td><b>{event.resourceType}</b><small title={event.resourceId}>{event.resourceId.slice(0, 12)}…</small></td><td><details className="audit-metadata"><summary>Inspect metadata</summary><pre>{JSON.stringify(event.metadata ?? {}, null, 2)}</pre></details></td></tr>)}</tbody></table></div>}
