@@ -51,6 +51,21 @@ evidenceVaultRouter.post("/submissions/:submissionId/evidence/:evidenceId/comple
   }catch(error){next(error);}
 });
 
+
+evidenceVaultRouter.get("/submissions/:submissionId/evidence/:evidenceId/scan-status",requireRole("OWNER","ADMIN","MEMBER","AUDITOR"),async(req,res,next)=>{
+  const submissionId=uuid.safeParse(req.params.submissionId), evidenceId=uuid.safeParse(req.params.evidenceId);
+  if(!submissionId.success||!evidenceId.success){res.status(400).json({error:{code:"VALIDATION_ERROR",message:"Invalid evidence reference"}});return;}
+  try{
+    const auth=(req as AuthRequest).auth!;
+    const job=await withTenantContext(auth.organizationId,tx=>tx.evidenceScanJob.findFirst({
+      where:{id:evidenceId.data,submissionId:submissionId.data,organizationId:auth.organizationId},
+      select:{id:true,status:true,attempts:true,nextAttemptAt:true,createdAt:true,updatedAt:true}
+    }));
+    if(!job){res.status(404).json({error:{code:"SCAN_JOB_NOT_FOUND",message:"Evidence scan job not found"}});return;}
+    res.status(200).json({scan:job});
+  }catch(error){next(error);}
+});
+
 evidenceVaultRouter.get("/submissions/:submissionId/evidence/:evidenceId/download",requireRole("OWNER","ADMIN","MEMBER","AUDITOR"),async(req,res,next)=>{
   const submissionId=uuid.safeParse(req.params.submissionId), evidenceId=uuid.safeParse(req.params.evidenceId);
   if(!submissionId.success||!evidenceId.success){res.status(400).json({error:{code:"VALIDATION_ERROR",message:"Invalid evidence reference"}});return;}
