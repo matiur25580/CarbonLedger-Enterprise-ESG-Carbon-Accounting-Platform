@@ -45,7 +45,14 @@ ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_actor_user_id_fkey" FOREIGN 
 ALTER TABLE "organizations" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "organizations" FORCE ROW LEVEL SECURITY;
 CREATE POLICY "organizations_tenant_isolation" ON "organizations"
-  USING ("id" = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid)
+  USING (
+    "id" = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
+    OR EXISTS (
+      SELECT 1 FROM "organization_memberships" membership
+      WHERE membership.organization_id = "organizations"."id"
+        AND membership.user_id = NULLIF(current_setting('app.current_user_id', true), '')::uuid
+    )
+  )
   WITH CHECK ("id" = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid);
 ALTER TABLE "organization_memberships" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "organization_memberships" FORCE ROW LEVEL SECURITY;
