@@ -442,6 +442,107 @@ function DataQualityWorkspace() {
 function MetricCard({ label, value, detail, icon, accent }: { label: string; value: string; detail: string; icon: string; accent?: string }) {
   return <article className="metric-card"><div className="metric-top"><span>{label}</span><span className={`metric-icon ${accent ?? ""}`}>{icon}</span></div><strong>{value}</strong><small>{detail}</small></article>;
 }
+
+type AuditEvent = {
+  id: string;
+  createdAt: string;
+  actorUserId: string | null;
+  actor: { name: string; email: string } | null;
+  action: string;
+  resourceType: string;
+  resourceId: string;
+  metadata: unknown;
+};
+type AuditPage = { limit: number; offset: number; total: number; hasMore: boolean };
+function AuditWorkspace({ session }: { session: Session }) {
+  const [from, setFrom] = useState(dateString(new Date(Date.now() - 29 * 86400000)));
+  const [to, setTo] = useState(dateInput());
+  const [action, setAction] = useState("");
+  const [resourceType, setResourceType] = useState("");
+  const [events, setEvents] = useState<AuditEvent[]>([]);
+  const [page, setPage] = useState<AuditPage>({ limit: 50, offset: 0, total: 0, hasMore: false });
+  const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState("");
+  const [exportInfo, setExportInfo] = useState<{ count: string; digest: string } | null>(null);
+  const canAccess = ["OWNER", "ADMIN", "AUDITOR"].includes(session.organization.role);
+  const load = useCallback(async () => {
+    setLoading(true); setError("");
+    try {
+      const params = new URLSearchParams({ from, to, limit: "50", offset: String(page.offset) });
+      if (action.trim()) params.set("action", action.trim());
+      if (resourceType.trim()) params.set("resourceType", resourceType.trim());
+      const result = await request<{ events: AuditEvent[]; page: AuditPage }>("/audit/events?" + params.toString());
+      setEvents(result.events); setPage(result.page);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load audit history");
+    } finally { setLoading(false); }
+  }, [from, to, action, resourceType, page.offset]);
+  useEffect(() => { if (canAccess) void load(); else setLoading(false); }, [canAccess, load]);
+  async function exportCsv() {
+    setExporting(true); setError(""); setExportInfo(null);
+    try {
+      const params = new URLSearchParams({ from, to });
+      if (action.trim()) params.set("action", action.trim());
+      if (resourceType.trim()) params.set("resourceType", resourceType.trim());
+      const url = api("/audit/export.csv?" + params.toString());
+      const headers = new Headers({ Authorization: "Bearer " + (accessToken ?? "") });
+      let response = await fetch(url, { headers, credentials: "include" });
+      if (response.status === 401) {
+        const refreshed = await fetch(api("/auth/refresh"), { method: "POST", credentials: "include" });
+        if (refreshed.ok) {
+          accessToken = (await refreshed.json() as { accessToken: string }).accessToken;
+          headers.set("Authorization", "Bearer " + accessToken);
+          response = await fetch(url, { headers, credentials: "include" });
+        }
+      }
+      if (!response.ok) {
+        const body = await response.json().catch(() => null) as { error?: { message?: string } } | null;
+        throw new Error(body?.error?.message ?? "Audit export could not be generated");
+      }
+      const digest = response.headers.get("X-Content-SHA256") ?? "";
+      const count = response.headers.get("X-Export-Record-Count") ?? "unknown";
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = "carbonledger-audit-" + from + "-to-" + to + ".csv";
+      anchor.click();
+      URL.revokeObjectURL(objectUrl);
+      setExportInfo({ count, digest });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Audit export failed");
+    } finally { setExporting(false); }
+  }
+  function applyFilters(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setExportInfo(null);
+    setPage(current => ({ ...current, offset: 0 }));
+  }
+  if (!canAccess) return <section className="dashboard-content"><div className="page-heading"><div><div className="section-kicker">GOVERNANCE & ASSURANCE</div><h1>Audit & compliance</h1><p>Read-only activity history for authorized compliance roles.</p></div></div><div className="notice-info">Audit history is available to OWNER, ADMIN and AUDITOR roles. Your current role does not have access.</div></section>;
+  return <section className="dashboard-content">
+    <div className="page-heading"><div><div className="section-kicker">GOVERNANCE & ASSURANCE</div><h1>Audit & compliance</h1><p>Review organization-scoped platform activity and export bounded audit workpapers.</p></div><button className="export-button" onClick={() => void load()} disabled={loading}>↻ Refresh events</button></div>
+    <form className="panel audit-filter-panel" onSubmit={applyFilters}>
+      <div className="panel-heading"><div><span className="section-kicker">EVENT FILTERS</span><h2>Review period and activity</h2></div><span className="unit-label">READ ONLY</span></div>
+      <div className="audit-filter-grid">
+        <label>From<input type="date" required value={from} max={to} onChange={e => setFrom(e.target.value)} /></label>
+        <label>To<input type="date" required value={to} min={from} max={dateInput()} onChange={e => setTo(e.target.value)} /></label>
+        <label>Action<input maxLength={120} value={action} onChange={e => setAction(e.target.value)} placeholder="e.g. ACTIVITY_RECORD_APPROVED" /></label>
+        <label>Resource type<input maxLength={80} value={resourceType} onChange={e => setResourceType(e.target.value)} placeholder="e.g. ActivityRecord" /></label>
+      </div>
+      <div className="audit-filter-actions"><button className="primary-button compact-button" type="submit" disabled={loading}>Apply filters</button><button className="table-action" type="button" disabled={loading || exporting} onClick={() => { setFrom(dateString(new Date(Date.now() - 29 * 86400000))); setTo(dateInput()); setAction(""); setResourceType(""); setPage(current => ({ ...current, offset: 0 })); setExportInfo(null); }}>Reset</button><button className="export-button" type="button" onClick={() => void exportCsv()} disabled={exporting || !from || !to}>{exporting ? <><Spinner /> Preparing export</> : "↓ Export audit CSV"}</button></div>
+    </form>
+    {error && <div className="notice-error" role="alert">{error}</div>}
+    {exportInfo && <div className="notice-success audit-export-result" role="status"><b>Audit CSV downloaded.</b><span>{exportInfo.count} records · SHA-256: <code>{exportInfo.digest || "Not supplied"}</code></span><small>The digest checks the downloaded file against the server-provided export digest. It is not a persisted hash chain or independent assurance.</small></div>}
+    <section className="panel workspace-panel audit-events-panel">
+      <div className="panel-heading"><div><span className="section-kicker">IMMUTABLE EVENT REGISTER</span><h2>{number(page.total)} matching events</h2></div><span className="unit-label">TENANT SCOPED</span></div>
+      {loading ? <div className="chart-loading"><Spinner /> Loading audit events…</div> : events.length === 0 ? <div className="empty-inline">No audit events match this date range and filter combination.</div> : <div className="table-scroll"><table className="workspace-table audit-table"><thead><tr><th>Occurred</th><th>Actor</th><th>Action</th><th>Resource</th><th>Recorded metadata</th></tr></thead><tbody>{events.map(event => <tr key={event.id}><td><b>{new Date(event.createdAt).toLocaleDateString()}</b><small>{new Date(event.createdAt).toLocaleTimeString()}</small></td><td>{event.actor?.name ?? "System / unavailable"}<small>{event.actor?.email ?? event.actorUserId ?? "No actor reference"}</small></td><td><span className="audit-action-label">{event.action}</span></td><td><b>{event.resourceType}</b><small title={event.resourceId}>{event.resourceId.slice(0, 12)}…</small></td><td><details className="audit-metadata"><summary>Inspect metadata</summary><pre>{JSON.stringify(event.metadata ?? {}, null, 2)}</pre></details></td></tr>)}</tbody></table></div>}
+      <div className="audit-pagination"><span>Showing {page.total === 0 ? 0 : page.offset + 1}–{Math.min(page.offset + events.length, page.total)} of {page.total}</span><div><button className="table-action" disabled={loading || page.offset === 0} onClick={() => setPage(current => ({ ...current, offset: Math.max(0, current.offset - current.limit) }))}>← Previous</button><button className="table-action" disabled={loading || !page.hasMore} onClick={() => setPage(current => ({ ...current, offset: current.offset + current.limit }))}>Next →</button></div></div>
+    </section>
+    <div className="workspace-footnote">Audit access is read-only. CSV exports are limited to 5,000 events and include a SHA-256 digest over the exact CSV bytes. A digest is a file-integrity check, not proof of database immutability, regulatory certification or independent assurance.</div>
+  </section>;
+}
+
 function Dashboard({ session, onLogout }: { session: Session; onLogout: () => void }) {
   const today = new Date();
   const [from, setFrom] = useState(dateString(new Date(today.getFullYear(), today.getMonth() - 11, 1)));
@@ -490,7 +591,7 @@ function Dashboard({ session, onLogout }: { session: Session; onLogout: () => vo
     </aside>
     <main className="main-panel">
       <header className="main-header"><div className="breadcrumbs">Workspace <span>/</span> <b>{activeNav}</b></div><div className="header-actions"><span className="header-date">{new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(today)}</span><button className="icon-button" aria-label="Refresh analytics" onClick={() => void load()}>↻</button><div className="profile-wrap"><button className="profile-button" onClick={() => setProfileOpen(!profileOpen)}><span className="profile-avatar">{session.user.name.slice(0,1).toUpperCase()}</span><span className="profile-name">{session.user.name}</span><span>⌄</span></button>{profileOpen && <div className="profile-menu"><b>{session.user.name}</b><small>{session.user.email}</small><button onClick={onLogout}>Sign out</button></div>}</div></div></header>
-      {activeNav === "Reduction plans" ? <ReductionWorkspace session={session} /> : activeNav === "Data quality" ? <DataQualityWorkspace /> : activeNav === "Emission factors" ? <EmissionFactorWorkspace session={session} /> : activeNav === "Activity data" || activeNav === "Facilities" ? <ActivityWorkspace session={session} activeNav={activeNav} /> : activeNav === "Suppliers" ? <SupplierWorkspace session={session} /> : <section className="dashboard-content">
+      {activeNav === "Audit & compliance" ? <AuditWorkspace session={session} /> : activeNav === "Reduction plans" ? <ReductionWorkspace session={session} /> : activeNav === "Data quality" ? <DataQualityWorkspace /> : activeNav === "Emission factors" ? <EmissionFactorWorkspace session={session} /> : activeNav === "Activity data" || activeNav === "Facilities" ? <ActivityWorkspace session={session} activeNav={activeNav} /> : activeNav === "Suppliers" ? <SupplierWorkspace session={session} /> : <section className="dashboard-content">
         <div className="page-heading"><div><div className="section-kicker">SUSTAINABILITY OVERVIEW</div><h1>Good {today.getHours() < 12 ? "morning" : today.getHours() < 18 ? "afternoon" : "evening"}, {session.user.name.split(" ")[0]}.</h1><p>Here’s your organization's emissions and climate performance at a glance.</p></div><button className="export-button" onClick={() => void csvDownload()}>↓ <span>Export emissions</span></button></div>
         <div className="filter-bar"><div className="filter-title"><span>◷</span> REPORTING PERIOD</div><label>From<input type="date" value={from} max={to} onChange={e => setFrom(e.target.value)} /></label><span className="filter-separator">—</span><label>To<input type="date" value={to} min={from} max={dateString(today)} onChange={e => setTo(e.target.value)} /></label><button onClick={() => void load()} disabled={loading}>{loading ? <Spinner /> : "Apply filters"}</button></div>
         {error && <div className="notice-error" role="alert">{error} <button onClick={() => void load()}>Retry</button></div>}
