@@ -155,8 +155,6 @@ model Facility {
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   createdBy       User         @relation("FacilityCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   activities      ActivityRecord[]
-  calculationResults CalculationResult[]
-
   @@unique([organizationId, code])
   @@unique([id, organizationId])
   @@index([organizationId, isActive, name])
@@ -187,6 +185,7 @@ model ActivityRecord {
   facility         Facility         @relation(fields: [facilityId, organizationId], references: [id, organizationId], onDelete: Restrict)
   createdBy        User             @relation("ActivityCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   reviewedBy       User?            @relation("ActivityReviewer", fields: [reviewedByUserId], references: [id], onDelete: Restrict)
+  calculationResults CalculationResult[]
 
   @@index([organizationId, periodStart, periodEnd])
   @@unique([id, organizationId])
