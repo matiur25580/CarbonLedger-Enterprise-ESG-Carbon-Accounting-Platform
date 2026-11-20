@@ -119,3 +119,30 @@ emissionFactorRouter.post("/:factorId/publish", requireRole("OWNER", "ADMIN"), a
     res.status(200).json({ factor });
   } catch (error) { next(error); }
 });
+
+emissionFactorRouter.post("/:factorId/retire", requireRole("OWNER", "ADMIN"), async (req, res, next) => {
+  const id = z.string().uuid().safeParse(req.params.factorId);
+  if (!id.success) {
+    res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "Invalid factor ID" } });
+    return;
+  }
+  try {
+    const auth = (req as AuthRequest).auth!;
+    const factor = await withTenantContext(auth.organizationId, async (tx) => {
+      const updated = await tx.emissionFactor.updateMany({
+        where: { id: id.data, organizationId: auth.organizationId, status: "PUBLISHED" },
+        data: { status: "RETIRED" }
+      });
+      if (!updated.count) return null;
+      await tx.auditLog.create({
+        data: { organizationId: auth.organizationId, actorUserId: auth.userId, action: "emission_factor.retired", resourceType: "emission_factor", resourceId: id.data }
+      });
+      return tx.emissionFactor.findFirst({ where: { id: id.data, organizationId: auth.organizationId } });
+    });
+    if (!factor) {
+      res.status(409).json({ error: { code: "FACTOR_NOT_RETIRABLE", message: "Only a published factor can be retired" } });
+      return;
+    }
+    res.status(200).json({ factor });
+  } catch (error) { next(error); }
+});
