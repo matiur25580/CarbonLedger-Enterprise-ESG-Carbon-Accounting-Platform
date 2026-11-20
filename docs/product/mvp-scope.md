@@ -37,17 +37,23 @@ CarbonLedger helps multi-site organizations collect sustainability activity data
 - Organization profile
 - Business units and facilities
 - Facility location and operational metadata
-- Facility-scoped access
+- Facility activation and deactivation
+- Tenant-scoped facility access
 
 ### Activity data
 - Stationary and mobile fuel, purchased electricity, refrigerants, waste, business travel and selected Scope 3 categories
-- Quantity, unit, date or reporting period, facility, source and notes
+- Quantity, unit, reporting period, facility, source and notes
+- Draft, submit, approve and reject workflow with reviewer attribution
+- Reporting-period overlap filters and tenant-isolation checks
 - Draft, submit, review and correction lifecycle
 - CSV import with row-level validation feedback
 
 ### Emission factors and calculation
-- Factor catalogue with source and publication metadata
-- Geography, unit, gas and validity period
+- Organization-managed factor catalogue with source and publication metadata
+- Versioned factors with geography, unit, category, scope and validity period
+- Draft, publish and retire lifecycle; published versions are immutable
+- Provenance: source name/version, methodology, optional URL and uncertainty
+- Factor values are metadata only until Phase 4 calculation engine is implemented
 - Explicit unit conversion
 - Deterministic calculation service
 - Immutable calculation snapshots and recalculation history
