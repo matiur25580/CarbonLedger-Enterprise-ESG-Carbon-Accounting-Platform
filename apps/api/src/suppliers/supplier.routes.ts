@@ -117,9 +117,33 @@ supplierRouter.post("/portal/:token/submit",async(req,res,next)=>{
 });
 
 supplierRouter.get("/",requireRole("OWNER","ADMIN","MEMBER","AUDITOR"),async(req,res,next)=>{
+  const query=z.object({
+    limit:z.coerce.number().int().min(1).max(100).default(25),
+    cursor:uuid.optional(),
+    q:z.string().trim().max(100).optional(),
+    status:z.enum(["ALL","ACTIVE","INACTIVE"]).default("ALL")
+  }).safeParse(req.query);
+  if(!query.success){res.status(400).json({error:{code:"VALIDATION_ERROR",message:"Invalid supplier directory filters or pagination"}});return}
   try{const auth=(req as AuthRequest).auth!;
-    const suppliers=await withTenantContext(auth.organizationId,tx=>tx.supplier.findMany({where:{organizationId:auth.organizationId},orderBy:{name:"asc"},select:{id:true,name:true,contactName:true,contactEmail:true,countryCode:true,website:true,category:true,status:true,createdAt:true,_count:{select:{submissions:true}}}}));
-    res.status(200).json({suppliers});
+    const where={
+      organizationId:auth.organizationId,
+      ...(query.data.status==="ALL"?{}:{status:query.data.status}),
+      ...(query.data.q?{OR:[
+        {name:{contains:query.data.q,mode:"insensitive" as const}},
+        {contactName:{contains:query.data.q,mode:"insensitive" as const}},
+        {contactEmail:{contains:query.data.q,mode:"insensitive" as const}},
+        {category:{contains:query.data.q,mode:"insensitive" as const}},
+        {countryCode:{contains:query.data.q,mode:"insensitive" as const}}
+      ]}:{})
+    };
+    const result=await withTenantContext(auth.organizationId,async tx=>{
+      const [suppliers,totalCount]=await Promise.all([
+        tx.supplier.findMany({where,take:query.data.limit,...(query.data.cursor?{skip:1,cursor:{id:query.data.cursor}}:{}),orderBy:[{name:"asc"},{id:"asc"}],select:{id:true,name:true,contactName:true,contactEmail:true,countryCode:true,website:true,category:true,status:true,createdAt:true,_count:{select:{submissions:true}}}}),
+        tx.supplier.count({where})
+      ]);
+      return {suppliers,totalCount};
+    });
+    res.status(200).json({...result,nextCursor:result.suppliers.length===query.data.limit?result.suppliers[result.suppliers.length-1]?.id??null:null});
   }catch(error){next(error)}
 });
 supplierRouter.post("/",requireRole("OWNER","ADMIN"),async(req,res,next)=>{
@@ -203,11 +227,17 @@ supplierRouter.post("/:supplierId/invitations",requireRole("OWNER","ADMIN"),asyn
   }catch(error){next(error)}
 });
 supplierRouter.get("/submissions",requireRole("OWNER","ADMIN","MEMBER","AUDITOR"),async(req,res,next)=>{
-  const query=z.object({limit:z.coerce.number().int().min(1).max(100).default(50)}).safeParse(req.query);
-  if(!query.success){res.status(400).json({error:{code:"VALIDATION_ERROR",message:"Invalid limit"}});return}
+  const query=z.object({limit:z.coerce.number().int().min(1).max(100).default(50),cursor:uuid.optional()}).safeParse(req.query);
+  if(!query.success){res.status(400).json({error:{code:"VALIDATION_ERROR",message:"Invalid submission pagination"}});return}
   try{const auth=(req as AuthRequest).auth!;
-    const submissions=await withTenantContext(auth.organizationId,tx=>tx.supplierSubmission.findMany({where:{organizationId:auth.organizationId},take:query.data.limit,orderBy:{submittedAt:"desc"},include:{supplier:{select:{id:true,name:true,contactEmail:true}},questionnaire:{select:{id:true,title:true,version:true}}}}));
-    res.status(200).json({submissions});
+    const submissions=await withTenantContext(auth.organizationId,tx=>tx.supplierSubmission.findMany({
+      where:{organizationId:auth.organizationId},
+      take:query.data.limit,
+      ...(query.data.cursor?{skip:1,cursor:{id:query.data.cursor}}:{}),
+      orderBy:[{submittedAt:"desc"},{id:"desc"}],
+      include:{supplier:{select:{id:true,name:true,contactEmail:true}},questionnaire:{select:{id:true,title:true,version:true}}}
+    }));
+    res.status(200).json({submissions,nextCursor:submissions.length===query.data.limit?submissions[submissions.length-1]?.id??null:null});
   }catch(error){next(error)}
 });
 

@@ -31,7 +31,7 @@ CarbonLedger is an engineering-focused ESG and carbon-accounting application. It
 | Supplier engagement | Versioned questionnaires, signed one-time invitations and submission review |
 | Evidence workflow | Private S3-compatible upload, ClamAV scanning, SHA-256 verification, evidence-level approval history and short-lived authenticated download URLs |
 | Reduction planning | Targets, initiatives and immutable planning scenarios |
-| Analytics | Scope/category/facility/month summaries, supplier coverage and CSV exports |
+| Analytics | Scope/category/facility/month summaries, supplier coverage, supplier review-health workflow indicators and CSV exports |
 | Data quality | Advisory score, severity filtering and record-level issue queue |
 | Integrations | Encrypted webhook secrets, transactional outbox and retrying delivery worker |
 | Audit | Tenant-scoped audit history and bounded CSV exports with SHA-256 digest |
@@ -110,21 +110,21 @@ Govern factor source, version, geography, unit, methodology and effective dates 
 
 <p align="center"><img src="docs/assets/dashboards/10-emission-factor-catalogue.svg" alt="Illustrative emission factor catalogue dashboard" width="100%"></p>
 
-**Implementation:** Factor catalogue API and immutable publish/retire rules are implemented. A dedicated catalogue management screen is future UI work; no official factor dataset is bundled.
+**Implementation:** Live authenticated catalogue workspace with source, version, geography, unit, methodology and validity filters; OWNER/ADMIN draft creation; and publish/retire lifecycle controls. No official factor dataset is bundled.
 
 ### 11 — Reduction targets and scenarios
 Compare manually defined baselines and target thresholds with planned initiative portfolios and scenario projections.
 
 <p align="center"><img src="docs/assets/dashboards/11-reduction-scenarios.svg" alt="Illustrative reduction targets and scenario planning dashboard" width="100%"></p>
 
-**Implementation:** Targets, initiatives and scenario APIs are implemented. Projections are planning estimates—not measured reductions—and the dedicated UI is future work.
+**Implementation:** Live reduction-planning workspace for target creation, initiative tracking, status changes and immutable scenario snapshots. Projections are planning estimates—not measured reductions—and do not automatically recalculate from inventory activity.
 
 ### 12 — Audit and reporting
 Inspect tenant-scoped audit events and export bounded emissions or audit records with integrity checks.
 
 <p align="center"><img src="docs/assets/dashboards/12-audit-reporting.svg" alt="Illustrative audit and reporting dashboard" width="100%"></p>
 
-**Implementation:** Audit and reporting APIs are implemented; emissions CSV export is available from the analytics workspace. The audit digest validates the exported bytes but is not a persisted hash chain or independent timestamp.
+**Implementation:** Live read-only audit workspace for OWNER / ADMIN / AUDITOR roles, with date/action/resource filters, paginated event history, recorded metadata inspection and bounded CSV exports with SHA-256 digest. The digest validates the exported bytes but is not a persisted hash chain or independent timestamp.
 
 ---
 
@@ -280,7 +280,7 @@ Deployment is intentionally left to the repository owner. Before manually deploy
 - Scope 3 coverage depends on configured categories and available supplier/activity data.
 - The evidence vault requires private S3-compatible storage and a reachable ClamAV daemon. The PostgreSQL-backed scan worker uses retries and lease recovery; each active scan buffers at most 50 MiB.
 - Supplier invitation email delivery uses an encrypted PostgreSQL queue and Resend when configured; delivery status is provider-acceptance status, not proof of inbox delivery. Without provider credentials, the existing manual-link fallback remains available.
-- Activity and supplier submission lists have current first-page limits and need cursor pagination for larger tenants.
+- Activity records and supplier submissions now use cursor pagination in the dashboard; supplier directory search/filtering and pagination remain future improvements.
 - Reduction baselines are manually supplied; scenario projections are estimates, not verified realized reductions.
 - Data-quality scoring is heuristic and advisory, not a formal assurance opinion.
 - Audit CSV SHA-256 is a file-integrity digest, not a tamper-evident hash chain or third-party timestamp.
@@ -317,6 +317,8 @@ Deployment is intentionally left to the repository owner. Before manually deploy
 - [Web dashboard](docs/product/web-dashboard.md)
 - [Activity data workspace](docs/product/activity-data-workspace.md)
 - [Supplier workspace](docs/product/supplier-workspace.md)
+- [Reduction planning workspace](docs/product/reduction-planning-workspace.md)
+- [Audit and compliance workspace](docs/product/audit-workspace.md)
 - [Calculation engine](docs/domain/calculation-engine.md)
 - [Data quality and reporting](docs/domain/analytics-and-reporting.md)
 - [Webhook delivery worker](docs/domain/webhook-delivery-worker.md)\n- [Supplier invitation email delivery](docs/security/supplier-invitation-email.md)
