@@ -129,6 +129,7 @@ model Organization {
   suppliers Supplier[]
   supplierQuestionnaires SupplierQuestionnaire[]
   supplierInvitations SupplierInvitation[]
+  supplierInvitationEmails SupplierInvitationEmail[]
   supplierSubmissions SupplierSubmission[]
   supplierEvidence SupplierEvidence[]
   supplierSubmissionReviews SupplierSubmissionReview[]
@@ -320,6 +321,7 @@ model SupplierInvitation {
   supplier        Supplier              @relation(fields: [supplierId, organizationId], references: [id, organizationId], onDelete: Restrict)
   questionnaire   SupplierQuestionnaire @relation(fields: [questionnaireId, organizationId], references: [id, organizationId], onDelete: Restrict)
   submission      SupplierSubmission?
+  emailDelivery   SupplierInvitationEmail?
   @@unique([id, organizationId])
   @@index([organizationId, supplierId, expiresAt])
   @@map("supplier_invitations")
@@ -590,4 +592,30 @@ model EvidenceScanJob {
   @@index([status, nextAttemptAt, createdAt])
   @@index([organizationId, submissionId, createdAt])
   @@map("evidence_scan_jobs")
+}
+
+model SupplierInvitationEmail {
+  id                 String   @id @default(uuid()) @db.Uuid
+  organizationId     String   @map("organization_id") @db.Uuid
+  invitationId       String   @map("invitation_id") @db.Uuid
+  recipient          String   @db.VarChar(254)
+  payloadCiphertext  String   @map("payload_ciphertext") @db.Text
+  payloadIv          String   @map("payload_iv") @db.Char(24)
+  payloadAuthTag     String   @map("payload_auth_tag") @db.Char(32)
+  status             String   @default("PENDING") @db.VarChar(20)
+  attempts           Int      @default(0)
+  nextAttemptAt      DateTime @default(now()) @map("next_attempt_at")
+  lockedAt           DateTime? @map("locked_at")
+  providerMessageId  String?  @map("provider_message_id") @db.VarChar(200)
+  lastError          String?  @map("last_error") @db.VarChar(1000)
+  sentAt             DateTime? @map("sent_at")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  invitation         SupplierInvitation @relation(fields: [invitationId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  @@unique([id, organizationId])
+  @@unique([invitationId])
+  @@index([status, nextAttemptAt, createdAt])
+  @@index([organizationId, createdAt])
+  @@map("supplier_invitation_emails")
 }
