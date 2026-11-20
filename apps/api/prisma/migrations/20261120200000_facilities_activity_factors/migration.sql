@@ -93,8 +93,8 @@ CREATE TABLE "emission_factors" (
   CONSTRAINT "emission_factors_validity_check" CHECK ("valid_to" IS NULL OR "valid_to" >= "valid_from"),
   CONSTRAINT "emission_factors_uncertainty_check" CHECK ("uncertainty_percent" IS NULL OR ("uncertainty_percent" >= 0 AND "uncertainty_percent" <= 100)),
   CONSTRAINT "emission_factors_publish_state_check" CHECK (
-    ("status" = 'PUBLISHED' AND "published_at" IS NOT NULL)
-    OR ("status" <> 'PUBLISHED' AND "published_at" IS NULL)
+    ("status" IN ('PUBLISHED','RETIRED') AND "published_at" IS NOT NULL)
+    OR ("status" = 'DRAFT' AND "published_at" IS NULL)
   )
 );
 CREATE UNIQUE INDEX "emission_factors_organization_id_code_version_key" ON "emission_factors"("organization_id","code","version");
@@ -123,3 +123,23 @@ CREATE POLICY "emission_factors_tenant_isolation" ON "emission_factors"
   WITH CHECK ("organization_id" = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid);
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON "facilities","activity_records","emission_factors" TO carbonledger_app;
+
+-- Once published, a factor's scientific and provenance metadata is immutable.
+CREATE FUNCTION enforce_emission_factor_immutability() RETURNS trigger AS $$
+BEGIN
+  IF OLD."status" = 'RETIRED' AND NEW."status" <> 'RETIRED' THEN
+    RAISE EXCEPTION 'retired emission factor versions cannot be reactivated';
+  END IF;
+  IF OLD."status" = 'PUBLISHED' AND NEW."status" NOT IN ('PUBLISHED','RETIRED') THEN
+    RAISE EXCEPTION 'published emission factors can only be retired';
+  END IF;
+  IF OLD."status" IN ('PUBLISHED','RETIRED')
+     AND (to_jsonb(NEW) - 'status' - 'updated_at') IS DISTINCT FROM (to_jsonb(OLD) - 'status' - 'updated_at') THEN
+    RAISE EXCEPTION 'published emission factor metadata is immutable; create a new version';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE TRIGGER "emission_factors_immutable_after_publish"
+  BEFORE UPDATE ON "emission_factors"
+  FOR EACH ROW EXECUTE FUNCTION enforce_emission_factor_immutability();
