@@ -28,6 +28,10 @@ export async function sendInvitationEmail(payload:InvitationEmailPayload,idempot
 }
 function escapeHtml(value:string){return value.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!));}
 
+export function isPermanentEmailProviderError(statusCode:number|undefined):boolean {
+ return statusCode!==undefined&&statusCode>=400&&statusCode<500&&statusCode!==408&&statusCode!==429;
+}
+
 export function invitationEmailRetryDelayMs(attempt:number):number {
  return Math.min(6*60*60*1000,30000*2**Math.min(10,Math.max(0,attempt-1)));
 }
