@@ -6,6 +6,7 @@ export const envSchema = z.object({
   WEB_ORIGIN: z.string().url().default("http://localhost:5173"),
   DATABASE_URL: z.string().optional(),
   APP_DATABASE_URL: z.string().min(1, "APP_DATABASE_URL is required for application queries"),
+  DATABASE_ADMIN_URL: z.string().optional(),
   JWT_ACCESS_SECRET: z.string().min(32, "JWT_ACCESS_SECRET must contain at least 32 characters"),
   COOKIE_SECURE: z.enum(["true", "false"]).default("false").transform((value) => value === "true")
 }).superRefine((value, context) => {
