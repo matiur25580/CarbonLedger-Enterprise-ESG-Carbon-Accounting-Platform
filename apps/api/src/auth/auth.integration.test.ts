@@ -1,6 +1,8 @@
 import { after, describe, it } from "node:test";
-import { randomUUID } from "node:crypto";
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
+import { PrismaClient } from "@prisma/client";
+import { env } from "../config/env.js";
 import { prisma } from "../lib/prisma.js";
 import { register, rotateRefreshToken, switchOrganization } from "./auth.service.js";
 import { verifyAccessToken } from "./tokens.js";
@@ -8,15 +10,20 @@ import { withTenantContext } from "./tenant-context.js";
 
 const createdUsers: string[] = [];
 const createdOrganizations: string[] = [];
+const adminPrisma = env.DATABASE_URL
+  ? new PrismaClient({ datasources: { db: { url: env.DATABASE_URL } } })
+  : null;
 
 after(async () => {
-  for (const organizationId of createdOrganizations) {
-    await withTenantContext(organizationId, (tx) =>
-      tx.organization.delete({ where: { id: organizationId } })
-    );
+  if (adminPrisma && createdOrganizations.length) {
+    await adminPrisma.auditLog.deleteMany({ where: { organizationId: { in: createdOrganizations } } });
+    await adminPrisma.organization.deleteMany({ where: { id: { in: createdOrganizations } } });
   }
-  if (createdUsers.length) await prisma.user.deleteMany({ where: { id: { in: createdUsers } } });
+  if (adminPrisma && createdUsers.length) {
+    await adminPrisma.user.deleteMany({ where: { id: { in: createdUsers } } });
+  }
   await prisma.$disconnect();
+  await adminPrisma?.$disconnect();
 });
 
 describe("identity and tenant isolation integration", () => {
