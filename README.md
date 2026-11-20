@@ -1,277 +1,330 @@
+<div align="center">
+
 # CarbonLedger
 
-**Enterprise ESG, Carbon Accounting & Sustainability Intelligence Platform**
+### Enterprise ESG • Carbon Accounting • Sustainability Intelligence
 
-Measure emissions. Govern sustainability data. Track reduction initiatives. Produce evidence-backed reports.
+**Measure emissions. Govern data. Build a credible path to reduction.**
 
-CarbonLedger is an enterprise software project built with the **PERN stack**: PostgreSQL, Express.js, React.js and Node.js. It is designed to help organizations collect activity data, calculate greenhouse-gas (GHG) emissions, manage suppliers and evidence, monitor reduction targets, and prepare structured sustainability disclosures.
+A full-stack PERN + TypeScript platform for organization-scoped activity data, traceable CO₂e calculations, supplier engagement, sustainability reporting and audit workflows.
 
-> **Project status:** Phases 0–14 implemented; Phase 15 security hardening and Phase 16 data-quality intelligence are in progress. Latest additions include layered API rate limits, a patched Vite version range, safer localhost-only development binding, weekly Dependabot update checks, and tenant-scoped activity quality diagnostics.
+[![CI](https://github.com/matiur25580/CarbonLedger-Enterprise-ESG-Carbon-Accounting-Platform/actions/workflows/ci.yml/badge.svg)](https://github.com/matiur25580/CarbonLedger-Enterprise-ESG-Carbon-Accounting-Platform/actions/workflows/ci.yml)
+![TypeScript](https://img.shields.io/badge/TypeScript-end--to--end-3178C6?logo=typescript&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=20232A)
+![License](https://img.shields.io/badge/License-Not%20selected-lightgrey)
 
-## Product goals
+</div>
 
-- Maintain organization-, subsidiary- and facility-level sustainability data.
-- Calculate Scope 1, Scope 2 and selected Scope 3 emissions using traceable, versioned emission factors.
-- Preserve calculation lineage: source activity, unit conversion, factor source/version, methodology and result.
-- Collect supplier and operational data with validation and approval workflows.
-- Manage evidence documents and verification history.
-- Track emissions baselines, reduction targets and initiatives.
-- Produce reviewable reports with data-quality indicators.
-- Enforce tenant isolation, least-privilege access and auditable changes.
+---
 
-## Intended users
+## Project at a glance
 
-Sustainability and ESG teams, environmental and compliance officers, facility managers, procurement teams, finance teams, auditors and executive leadership.
+CarbonLedger is an engineering-focused ESG and carbon-accounting application. It helps teams capture operational activity, review source data, calculate emissions with versioned factors, engage suppliers, plan reduction initiatives and export reviewable records.
 
-## Pre-deployment operations
+| Capability | Current implementation |
+|---|---|
+| Multi-tenant identity | Organization membership, role checks, PostgreSQL Row-Level Security |
+| Activity operations | Facilities, source-linked activity records, submission and approval |
+| Carbon calculations | Decimal arithmetic, unit conversion, factor validity and immutable snapshots |
+| Data ingestion | CSV preview, row validation, duplicate detection and atomic commit |
+| Supplier engagement | Versioned questionnaires, signed one-time invitations and submission review |
+| Evidence workflow | Evidence metadata and append-only review decisions; no binary file vault yet |
+| Reduction planning | Targets, initiatives and immutable planning scenarios |
+| Analytics | Scope/category/facility/month summaries, supplier coverage and CSV exports |
+| Data quality | Advisory score, severity filtering and record-level issue queue |
+| Integrations | Encrypted webhook secrets, transactional outbox and retrying delivery worker |
+| Audit | Tenant-scoped audit history and bounded CSV exports with SHA-256 digest |
 
-The CI workflow now pins GitHub Actions to immutable full commit SHAs. Before any manual deployment, follow `docs/operations/pre-deployment-readiness.md`. Key outstanding gates include committing a pnpm lockfile and enabling frozen installs, configuring a shared rate-limit store before API horizontal scaling, production secrets/network/database/backup configuration, and completing observability and security review. Deployment is intentionally left to the repository owner.
- 
-## Technology
+> **Status:** The core API, authenticated dashboard and primary workspaces are implemented. Security hardening and pre-deployment readiness work continue. A passing CI run is a code-quality signal—not a production-readiness or compliance certification.
+
+## Product showcase — 12 dashboard previews
+
+The following illustrations use the CarbonLedger visual language and show how the platform's capabilities are organized. **They are illustrative UI previews, not screenshots of live customer data.** Each section states whether the corresponding capability is available in the current UI or API.
+
+### 01 — Executive ESG overview
+A consolidated view of calculated emissions, reporting trends, supplier submission coverage and reduction scenario snapshots.
+
+<p align="center"><img src="docs/assets/dashboards/01-executive-overview.svg" alt="Illustrative CarbonLedger executive ESG overview dashboard" width="100%"></p>
+
+**Implementation:** Live authenticated analytics dashboard. Values are loaded from the tenant-scoped analytics API; no demo emissions are fabricated.
+
+### 02 — Emissions intelligence
+Understand emissions across Scope 1, Scope 2 and Scope 3, with category, facility and monthly breakdowns backed by calculation snapshots.
+
+<p align="center"><img src="docs/assets/dashboards/02-emissions-intelligence.svg" alt="Illustrative emissions intelligence dashboard" width="100%"></p>
+
+**Implementation:** Live analytics API and overview visualizations. Emission factors must be supplied with authoritative source metadata by the organization.
+
+### 03 — Facility operations
+Organize operational sites and connect activity data to the correct facility and reporting context.
+
+<p align="center"><img src="docs/assets/dashboards/03-facility-operations.svg" alt="Illustrative facility operations dashboard" width="100%"></p>
+
+**Implementation:** Facility workspace supports creation, listing and activation controls. Advanced facility benchmarking is not yet implemented.
+
+### 04 — Activity data register
+Capture electricity, fuel, materials and other activity records with source references and controlled review states.
+
+<p align="center"><img src="docs/assets/dashboards/04-activity-data-register.svg" alt="Illustrative activity data register dashboard" width="100%"></p>
+
+**Implementation:** Live activity workspace with draft editing, submission, role-based approval/rejection and calculation actions. Current register loads up to 100 records.
+
+### 05 — CSV import quality
+Preview a file before writing, inspect row-level validation and duplicate findings, then commit an accepted batch atomically.
+
+<p align="center"><img src="docs/assets/dashboards/05-csv-import-quality.svg" alt="Illustrative CSV import quality dashboard" width="100%"></p>
+
+**Implementation:** Live CSV preview/commit flow with strict validation, 1 MiB / 500-row limits and SHA-256 replay protection.
+
+### 06 — Data quality intelligence
+Prioritize possible duplicates, missing source references, stale drafts, overdue reviews, uncalculated approvals and statistical outliers.
+
+<p align="center"><img src="docs/assets/dashboards/06-data-quality-intelligence.svg" alt="Illustrative data quality intelligence dashboard" width="100%"></p>
+
+**Implementation:** Live data-quality workspace and API. Its 0–100 score is heuristic; findings are advisory and never auto-edit source records.
+
+### 07 — Supplier sustainability workspace
+Manage supplier onboarding, questionnaire versions, invitation workflows and submitted responses in one place.
+
+<p align="center"><img src="docs/assets/dashboards/07-supplier-management.svg" alt="Illustrative supplier sustainability workspace" width="100%"></p>
+
+**Implementation:** Live supplier workspace. Invitation URLs are currently distributed manually; automated email delivery is not implemented.
+
+### 08 — Supplier questionnaire portal
+Give suppliers a controlled, token-based experience to complete published sustainability questionnaires.
+
+<p align="center"><img src="docs/assets/dashboards/08-supplier-portal.svg" alt="Illustrative supplier questionnaire portal" width="100%"></p>
+
+**Implementation:** Live public portal with signed, seven-day, single-use invitations and server-side answer validation.
+
+### 09 — Evidence and review trail
+Track evidence references, review decisions and the history associated with supplier submissions.
+
+<p align="center"><img src="docs/assets/dashboards/09-evidence-review.svg" alt="Illustrative evidence and review dashboard" width="100%"></p>
+
+**Implementation:** Evidence metadata and review workflows are implemented. Binary upload, malware scanning and secure download delivery are not yet available.
+
+### 10 — Emission-factor catalogue
+Govern factor source, version, geography, unit, methodology and effective dates to make calculations reproducible.
+
+<p align="center"><img src="docs/assets/dashboards/10-emission-factor-catalogue.svg" alt="Illustrative emission factor catalogue dashboard" width="100%"></p>
+
+**Implementation:** Factor catalogue API and immutable publish/retire rules are implemented. A dedicated catalogue management screen is future UI work; no official factor dataset is bundled.
+
+### 11 — Reduction targets and scenarios
+Compare manually defined baselines and target thresholds with planned initiative portfolios and scenario projections.
+
+<p align="center"><img src="docs/assets/dashboards/11-reduction-scenarios.svg" alt="Illustrative reduction targets and scenario planning dashboard" width="100%"></p>
+
+**Implementation:** Targets, initiatives and scenario APIs are implemented. Projections are planning estimates—not measured reductions—and the dedicated UI is future work.
+
+### 12 — Audit and reporting
+Inspect tenant-scoped audit events and export bounded emissions or audit records with integrity checks.
+
+<p align="center"><img src="docs/assets/dashboards/12-audit-reporting.svg" alt="Illustrative audit and reporting dashboard" width="100%"></p>
+
+**Implementation:** Audit and reporting APIs are implemented; emissions CSV export is available from the analytics workspace. The audit digest validates the exported bytes but is not a persisted hash chain or independent timestamp.
+
+---
+
+## Technology stack
 
 | Layer | Technology |
 |---|---|
 | Frontend | React 19, TypeScript, Vite |
 | Backend | Node.js 22+, Express 5, TypeScript |
 | Database | PostgreSQL 17 |
-| ORM and migrations | Prisma |
+| Data access | Prisma ORM and migrations |
 | Validation | Zod |
-| API | Versioned REST (/api/v1) |
-| Local infrastructure | Docker Compose |
-| CI | GitHub Actions |
+| API style | Versioned REST under `/api/v1` |
+| Security | Helmet, CORS allowlist, HttpOnly refresh cookies, JWT access tokens, rate limits |
+| Multi-tenancy | PostgreSQL RLS and organization-scoped authorization |
+| Background processing | Node worker, transactional outbox, webhook retries |
+| Local development | pnpm workspace and Docker Compose |
+| CI | GitHub Actions: typecheck, lint, test and build |
 
-## Repository layout
+## Architecture
 
-- apps/web — React application
-- apps/api — Express API and Prisma schema
-- apps/worker — background job runner in a later phase
-- packages/* — shared contracts and validation (introduced as domain modules require them)
-- docs/architecture — system design and decisions
-- docs/product — product requirements and roadmap
-- .github/workflows — CI quality gates
+CarbonLedger follows a modular-monolith approach: one TypeScript API organized by domain, one React application, PostgreSQL as the system of record, and a separately runnable worker for asynchronous webhook delivery.
+
+```text
+carbonledger/
+├── apps/
+│   ├── web/                 # React + TypeScript + Vite
+│   └── api/                 # Express API, Prisma schema and worker
+├── infra/
+│   └── postgres/            # Local PostgreSQL role initialization
+├── docs/
+│   ├── architecture/        # System design and decisions
+│   ├── domain/              # Domain behavior and API notes
+│   ├── operations/          # Operator and pre-deployment runbooks
+│   ├── product/             # Product scope and workspace notes
+│   └── security/            # Threat model and security controls
+├── .github/workflows/       # CI quality gates
+├── docker-compose.yml
+└── pnpm-workspace.yaml
+```
+
+### Engineering principles
+
+- **Tenant isolation by design:** tenant context is derived server-side; PostgreSQL RLS provides defense in depth.
+- **Reproducible calculations:** Decimal arithmetic, explicit unit conversions, date-valid factors and immutable provenance snapshots.
+- **Review before trust:** activity and supplier data use explicit review states and append-only decisions.
+- **No invented emissions:** no bundled placeholder factors or fabricated customer metrics.
+- **Clear data boundaries:** calculated emissions, supplier coverage, planning estimates and heuristic quality findings are reported as different concepts.
+- **Secure-by-default integration:** encrypted webhook secrets, signed payloads, destination validation and at-least-once delivery semantics.
 
 ## Quick start
 
-**Prerequisites:** Node.js 22+, Corepack/pnpm 10+, and Docker with Compose.
+### Prerequisites
 
-1. Clone the repository and install dependencies:
-
-   `git clone https://github.com/matiur25580/CarbonLedger-Enterprise-ESG-Carbon-Accounting-Platform.git`
-   
-   `cd CarbonLedger-Enterprise-ESG-Carbon-Accounting-Platform`
-   
-   `corepack enable`
-   
-   `pnpm install`
-
-2. Create your local environment file:
-
-   `cp .env.example .env`
-
-3. Start PostgreSQL and generate Prisma Client:
-
-   `pnpm db:up`
-   
-   `pnpm db:generate`
-
-The Compose initialization script provisions a bootstrap administrator, a non-superuser `carbonledger_migrator`, and a restricted `carbonledger_app` role without `BYPASSRLS` privileges. The API uses only `APP_DATABASE_URL`; Prisma migrations use `DATABASE_URL`; `DATABASE_ADMIN_URL` is reserved for local provisioning and test cleanup. On an already-initialized PostgreSQL volume, apply `infra/postgres/init/01-application-role.sql` manually as the database administrator before starting the API.
-
-4. Apply the initial development migration:
-
-   `pnpm db:migrate`
-
-5. Start the API and frontend:
-
-   `pnpm dev`
-
-   - Web: http://localhost:5173
-   - API liveness: http://localhost:4000/api/v1/health/live
-   - API readiness: http://localhost:4000/api/v1/health/ready
-
-The local database credentials in `.env.example` are for development only. Never reuse them in a deployed environment.
-
-## Web application and analytics workspace (Phase 12)
-
-The React application now includes organization registration, sign-in, HttpOnly refresh-cookie session restoration, in-memory access-token handling, and a responsive ESG overview dashboard connected to `GET /api/v1/analytics/overview`. It visualizes calculation-backed emissions totals, monthly trend, Scope 1/2/3 mix, facility footprint, supplier submission coverage and reduction scenario snapshots. The reporting period is configurable and users can export the corresponding emissions CSV.
-
-Navigation for Emissions, Reduction plans and Audit & compliance remains a product shell. Activity data, Facilities and Suppliers now have dedicated API-connected workspaces. No demo emissions values are fabricated. See `docs/product/web-dashboard.md`, `docs/product/activity-data-workspace.md` and `docs/product/supplier-workspace.md`.
-
-## Activity data and facility workspaces (Phase 13)
-
-The React client now includes organization-scoped facility management and an activity data workspace: create and activate facilities, capture source-linked activity records as drafts, submit records for review, approve/reject submissions according to role, preview and commit validated CSV imports, inspect recent import batches, and calculate approved records through the deterministic calculation API. The UI consumes the existing tenant-aware API; it does not fabricate emission factors or calculated values.
-
-Current frontend limitation: the activity register loads up to the first 100 records and does not yet expose cursor pagination. Binary evidence attachment and dedicated emission-factor catalogue UI remain future work. See `docs/product/activity-data-workspace.md`.
-
-
-## Supplier sustainability workspace (Phase 14)
-
-The Suppliers navigation now includes supplier onboarding and status management, a versioned questionnaire builder (TEXT, NUMBER, BOOLEAN and CHOICE), publish controls, secure single-use seven-day invitations, a public supplier questionnaire route, immutable answer review, append-only review decisions, and evidence-reference metadata registration. OWNER/ADMIN manage suppliers and questionnaires; OWNER/ADMIN/AUDITOR can record review decisions.
-
-Invitation URLs are shown once and must be distributed manually through an approved channel; email delivery is not implemented. The public supplier portal uses the signed invitation token and the API remains authoritative for validation. Evidence registration stores metadata only: it does not upload, scan, verify or deliver binary files. The UI currently loads the latest 100 submissions without cursor pagination. See `docs/product/supplier-workspace.md`.
-
-## Identity and organization API (Phase 2)
-
-Authentication endpoints are available under `/api/v1/auth`:
-
-- POST `/register` — create a user and initial organization owner account
-- POST `/login` — authenticate and issue a short-lived access token
-- POST `/refresh` — rotate the HttpOnly refresh cookie
-- POST `/logout` — revoke the current refresh session
-- GET `/me` — inspect the authenticated user and selected organization
-- GET `/organizations` — list organizations for the authenticated user
-- POST `/switch-organization` — switch tenant context and rotate the refresh session
-- GET `/organization` — retrieve the selected organization
-
-Tenant member endpoints are under `/api/v1/organizations/current/members`. Only OWNER and ADMIN can update member roles; OWNER cannot be assigned through the role-update endpoint.
-
-Set a strong `JWT_ACCESS_SECRET` (at least 32 characters) in your local `.env`. For HTTPS production deployments set `COOKIE_SECURE=true`. The quick-start migration command applies the committed identity schema and RLS policies.
-
-See `docs/security/identity-and-tenancy.md` for the threat model and production database-role requirements. CI provisions PostgreSQL, applies the migration, and runs a cross-tenant row-level-security integration test.
-
-## Facilities, activity data and factor API (Phase 3)
-
-All endpoints require a valid bearer access token and enforce the selected organization tenant:
-
-- GET/POST `/api/v1/facilities` — list and register facilities
-- PATCH `/api/v1/facilities/:facilityId/status` — activate/deactivate a facility (OWNER/ADMIN)
-- GET/POST `/api/v1/activity-records` — filter and capture activity records
-- PATCH `/api/v1/activity-records/:recordId` — correct your draft/rejected record
-- POST `/api/v1/activity-records/:recordId/submit` — submit a draft or rejected record
-- POST `/api/v1/activity-records/:recordId/review` — approve/reject a submission (OWNER/ADMIN/AUDITOR; no self-review)
-- GET/POST `/api/v1/emission-factors` — browse and create source-backed factor versions
-- POST `/api/v1/emission-factors/:factorId/publish` — publish a draft factor (OWNER/ADMIN)
-- POST `/api/v1/emission-factors/:factorId/retire` — retire a published factor without editing its provenance (OWNER/ADMIN)
-
-Activity records retain facility, reporting period, quantity, unit, category, scope, source and workflow status. Emission factors retain source name/version, methodology, geography, unit, validity window, uncertainty and immutable version metadata after publication. The initial factor values are organization-managed; no sample or placeholder factor is treated as an authoritative official value. ## Versioned calculation API (Phase 4)
-
-- POST `/api/v1/calculations` — calculate 1–100 unique APPROVED activity records
-- GET `/api/v1/calculations?limit=50` — list calculation runs
-- GET `/api/v1/calculations/:runId` — retrieve immutable run and result snapshots
-
-The engine uses Decimal arithmetic, a strict unit-conversion registry, country-specific factor preference with GLOBAL fallback, date-valid published factors, deterministic request fingerprints and append-only snapshots. Unsupported units, missing factors and ambiguous factor matches fail closed. No sample emission factors are bundled; organizations must provide source-backed factors. See `docs/domain/calculation-engine.md`.
-
-## Data quality intelligence (Phase 16)
-
-The analytics API now includes `GET /api/v1/analytics/data-quality?from=YYYY-MM-DD&to=YYYY-MM-DD[&facilityId=<uuid>]`. It returns a transparent 0–100 heuristic score, issue counts and record-level findings for possible duplicates, missing source references, stale drafts, overdue reviews, approved-but-uncalculated activity and statistical quantity outliers. Analysis is capped at 5,000 records and reports truncation. Findings are review signals—not automatic corrections or proof of non-compliance. See `docs/domain/analytics-and-reporting.md`.
-
-## Data quality intelligence (Phase 16)
-
-The analytics API exposes `GET /api/v1/analytics/data-quality?from=YYYY-MM-DD&to=YYYY-MM-DD[&facilityId=<uuid>]`. The React dashboard includes a dedicated Data quality workspace with a heuristic scorecard, issue distribution, severity filtering and record-level review queue. Findings cover possible duplicates, missing source references, stale drafts, overdue reviews, approved-but-uncalculated activity and statistical outliers. Results are capped at 5,000 records and explicitly disclose truncation. Findings are advisory; no source record is automatically changed or deleted. See `docs/domain/analytics-and-reporting.md`.
-
-## Activity data imports (Phase 5)
-
-- POST `/api/v1/activity-imports/preview` — validate CSV data and return row-level quality findings without writing.
-- POST `/api/v1/activity-imports/commit` — atomically import valid rows as DRAFT activity records.
-- GET `/api/v1/activity-imports` — list tenant-scoped import history.
-
-CSV imports support quoted fields, strict schema/date/quantity/category checks, active facility resolution, in-file and existing-record duplicate detection, 1 MiB/500-row limits, SHA-256 replay protection and auditable batch reports. Invalid or duplicate rows block the entire batch. Imported records use the standard activity submission and review workflow. See `docs/domain/activity-imports-and-quality-controls.md`.
-
-See `docs/domain/activity-data-and-factor-catalogue.md` for the domain rules and API behavior.
-
-## Supplier sustainability portal (Phase 6)
-
-Internal supplier management endpoints are under `/api/v1/suppliers` and require organization authentication:
-
-- GET/POST `/api/v1/suppliers` — list and onboard suppliers (OWNER/ADMIN create).
-- PATCH `/api/v1/suppliers/:supplierId/status` — activate/deactivate a supplier.
-- GET/POST `/api/v1/suppliers/questionnaires` — list/create versioned questionnaires.
-- POST `/api/v1/suppliers/questionnaires/:questionnaireId/publish` — publish a questionnaire.
-- POST `/api/v1/suppliers/:supplierId/invitations` — issue a seven-day, single-use portal token for a published questionnaire.
-- GET `/api/v1/suppliers/submissions` — review submitted supplier answers.
-
-External supplier endpoints are unauthenticated by organization credentials but require a signed, expiring invitation token:
-- GET `/api/v1/suppliers/portal/:token` — retrieve the supplier's questionnaire.
-- POST `/api/v1/suppliers/portal/:token/submit` — validate and submit answers once.
-
-Invitation tokens are stored only as SHA-256 hashes, bind supplier/questionnaire/tenant identifiers, expire after seven days, and are single-use. The API returns the token once; delivery is not automated yet (`deliveryStatus: NOT_SENT`). Submission answers are immutable and tenant-scoped. See `docs/domain/supplier-portal.md`.
-
-## Supplier evidence and review workflow (Phase 7)
-
-- POST `/api/v1/suppliers/submissions/:submissionId/evidence` — register evidence object metadata (OWNER/ADMIN/MEMBER/AUDITOR).
-- GET `/api/v1/suppliers/submissions/:submissionId/evidence` — list evidence metadata.
-- POST `/api/v1/suppliers/submissions/:submissionId/reviews` — append an APPROVED, REJECTED or NEEDS_CHANGES decision (OWNER/ADMIN/AUDITOR).
-- GET `/api/v1/suppliers/submissions/:submissionId/reviews` — retrieve the ordered review history.
-
-Evidence metadata records file name, media type, byte size (maximum 50 MiB), SHA-256, storage provider and opaque object key. Binary upload, malware scanning and download delivery are **not** implemented; connect trusted object storage before treating evidence as present or safe. Evidence and review events are tenant-isolated and database-append-only. Each action is audited. See `docs/domain/supplier-evidence-and-reviews.md`.
-
-## Reduction targets, initiatives and scenario analysis (Phase 8)
-
-- POST `/api/v1/reductions/targets` — OWNER/ADMIN create a Scope 1/2/3 target with baseline year, target year, baseline kg CO2e and reduction percentage.
-- GET `/api/v1/reductions/targets?limit=50` — list targets with initiatives and recent scenarios.
-- POST `/api/v1/reductions/targets/:targetId/initiatives` — OWNER/ADMIN/MEMBER add an initiative with expected annual reduction.
-- PATCH `/api/v1/reductions/initiatives/:initiativeId/status` — update initiative status.
-- POST `/api/v1/reductions/targets/:targetId/scenarios` — create an immutable planning scenario snapshot.
-- GET `/api/v1/reductions/targets/:targetId/scenarios` — list scenario snapshots.
-
-Scenario analysis sums expected reductions from PLANNED, IN_PROGRESS and COMPLETED initiatives, then calculates projected emissions against the target threshold using Decimal arithmetic. These are planning estimates; baseline values are manually supplied and are not yet derived from historical calculation runs or verified measured reductions. See `docs/domain/reduction-targets-and-scenarios.md`.
-
-## Analytics and reporting (Phase 9)
-
-- GET `/api/v1/analytics/overview?from=YYYY-MM-DD&to=YYYY-MM-DD` — tenant-scoped emissions summary by scope, category, facility and month, plus supplier submission coverage and reduction target scenario progress. Optional `facilityId` narrows the report.
-- GET `/api/v1/analytics/emissions.csv?from=YYYY-MM-DD&to=YYYY-MM-DD` — export up to 10,000 calculated result rows with activity and emission-factor provenance. Optional `facilityId` narrows the export.
-
-Reports are based on immutable calculation snapshots and clearly distinguish supplier submission coverage and planned target scenarios from verified emissions or realized reductions. See `docs/domain/analytics-and-reporting.md`.
-
-## Webhook integrations and event outbox (Phase 10A)
-
-- POST `/api/v1/webhooks/endpoints` — OWNER/ADMIN register an HTTPS endpoint and subscribe to event types; signing secret is shown once.
-- GET `/api/v1/webhooks/endpoints` — list tenant-scoped endpoint metadata.
-- PATCH `/api/v1/webhooks/endpoints/:endpointId/disable` — disable an endpoint.
-- GET `/api/v1/webhooks/deliveries` — inspect durable delivery queue records.
-
-Supplier questionnaire submissions enqueue `supplier.submission.created` deliveries in the same database transaction as the submission and audit record. Secrets are AES-256-GCM encrypted at rest; configure `WEBHOOK_ENCRYPTION_KEY` using a 32-byte hex key (for example, `openssl rand -hex 32`). Endpoint creation rejects obvious local/private destinations, but complete DNS/IP pinning and egress controls are required before outbound delivery.
-
-**Delivery worker:** a separate runnable worker now claims outbox rows with `FOR UPDATE SKIP LOCKED`, performs HTTPS delivery with DNS/IP validation and pinned connections, signs requests with HMAC-SHA256, and retries with bounded exponential backoff. Run `pnpm --filter @carbonledger/api dev:worker` locally or `pnpm --filter @carbonledger/api worker` after building. The worker is not yet provisioned as a hosted service. Delivery is at-least-once; receivers must deduplicate by event ID. See `docs/domain/webhook-delivery-worker.md`.
-
-## Enterprise audit and compliance center (Phase 11)
-
-- GET `/api/v1/audit/events` — paginated, tenant-scoped audit history for OWNER/ADMIN/AUDITOR, with actor, action, resource, date and event filters.
-- GET `/api/v1/audit/export.csv?from=YYYY-MM-DD&to=YYYY-MM-DD` — bounded chronological CSV export with actor identity and recorded metadata.
-
-Exports include an `X-Content-SHA256` digest over the exact CSV bytes, a record count and organization identifier; spreadsheet formula-leading values are neutralized. The digest verifies the downloaded export against its supplied checksum; it is not a persisted hash chain or independent assurance. Audit access remains tenant-scoped and application audit rows are append-only. See `docs/domain/audit-and-compliance-center.md`.
-
-## Security hardening (Phase 15 — in progress)\n\nThe API now applies IP-based request limits to versioned business routes, with stricter limits for calculation and activity-import endpoints. Liveness/readiness probes are excluded. These limits currently use process-local memory and must be moved to a shared store such as Redis before horizontal API scaling. Vite is constrained to the patched 6.4.6 release line and the local dev server no longer binds to all network interfaces by default. Weekly Dependabot updates are configured for pnpm and GitHub Actions.\n\nA pnpm lockfile is not yet committed, so the exact resolved dependency tree is not yet reproducible; generate and commit the lockfile before enabling frozen CI installation. See `docs/security/api-abuse-controls-and-dependency-hardening.md`.\n\n## Engineering commands
-
-- `pnpm typecheck` — TypeScript checks across workspaces
-- `pnpm lint` — current static quality checks
-- `pnpm test` — workspace tests
-- `pnpm build` — production builds
-- `pnpm db:studio` — open Prisma Studio
-
-## Architecture principles
-
-1. Modular monolith first; avoid premature microservices.
-2. Tenant identity is derived and enforced server-side.
-3. PostgreSQL Row-Level Security provides defense in depth.
-4. Every calculation is reproducible and retains factor provenance.
-5. Reports distinguish measured, estimated, missing and unverified data.
-6. Implemented, planned and illustrative functionality are clearly distinguished.
-
-## Engineering roadmap
-
-- [x] Phase 0 — Product scope, architecture and repository foundation
-- [x] Phase 1 — Workspace, local infrastructure and quality gates (initial foundation)
-- [x] Phase 2 — Identity, organizations and tenant isolation
-- [x] Phase 3 — Facilities, activity data and emission-factor catalogue
-- [x] Phase 4 — Versioned Scope 1/2/3 calculation engine
-- [x] Phase 5 — ESG data collection, imports and data-quality workflows
-- [x] Phase 6 — Supplier sustainability portal
-- [x] Phase 7 — Evidence metadata and supplier review decisions
-- [x] Phase 8 — Targets, initiatives and scenario analysis
-- [x] Phase 9 — Analytics and reporting
-- [x] Phase 10 — Integrations, webhooks and background processing (worker code; hosted deployment is manual)
-- [x] Phase 11 — Compliance audit center and verifiable exports
-- [x] Phase 12 — Authenticated analytics dashboard
-- [x] Phase 13 — Activity data and facility workspaces
-- [x] Phase 14 — Supplier sustainability workspace
-- [ ] Phase 15 — Security, performance, accessibility and production hardening (in progress: API rate limits, Vite advisory remediation and Dependabot configuration; lockfile and distributed rate-limit store remain outstanding)
-
-See `docs/product/mvp-scope.md` and `docs/architecture/system-design.md`.
-
-## Domain boundary
-
-CarbonLedger is a software engineering demonstration, not an accredited assurance service or legal compliance guarantee. Framework mapping assists reporting workflows; qualified professionals remain responsible for methodology selection, review and external submissions. Emission factors must retain authoritative source, geography, unit and validity metadata.
+- Node.js 22 or newer
+- Corepack with pnpm 10
+- Docker Engine / Docker Desktop with Compose
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/matiur25580/CarbonLedger-Enterprise-ESG-Carbon-Accounting-Platform.git
+cd CarbonLedger-Enterprise-ESG-Carbon-Accounting-Platform
+corepack enable
+pnpm install
+```
+
+> A committed pnpm lockfile is still outstanding. Until it is added, dependency resolution is not fully reproducible and CI uses a non-frozen install.
+
+### 2. Configure local environment
+
+```bash
+cp .env.example .env
+```
+
+Review every variable in `.env.example`. The sample credentials are for local development only—never reuse them in a hosted environment.
+
+### 3. Start PostgreSQL and prepare Prisma
+
+```bash
+pnpm db:up
+pnpm db:generate
+pnpm db:migrate
+```
+
+The local Compose initialization provisions a bootstrap administrator, a migration role and a restricted application role. The API uses `APP_DATABASE_URL`; Prisma migrations use `DATABASE_URL`; `DATABASE_ADMIN_URL` is reserved for local provisioning and test cleanup. For an existing initialized volume, apply `infra/postgres/init/01-application-role.sql` as a database administrator if the restricted roles have not been created.
+
+### 4. Run the application
+
+```bash
+pnpm dev
+```
+
+| Service | Local URL |
+|---|---|
+| Web application | http://localhost:5173 |
+| API liveness | http://localhost:4000/api/v1/health/live |
+| API readiness | http://localhost:4000/api/v1/health/ready |
+| API metadata | http://localhost:4000/api/v1/meta |
+
+### Useful commands
+
+```bash
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm build
+pnpm db:studio
+pnpm --filter @carbonledger/api dev:worker
+```
+
+## API capability map
+
+| Domain | Representative endpoints |
+|---|---|
+| Authentication | `/api/v1/auth` |
+| Organizations and membership | `/api/v1/organizations` |
+| Facilities | `/api/v1/facilities` |
+| Activity records | `/api/v1/activity-records` |
+| Emission factors | `/api/v1/emission-factors` |
+| Calculations | `/api/v1/calculations` |
+| CSV imports | `/api/v1/activity-imports` |
+| Suppliers and portal | `/api/v1/suppliers` |
+| Reduction planning | `/api/v1/reductions` |
+| Analytics and data quality | `/api/v1/analytics` |
+| Webhooks | `/api/v1/webhooks` |
+| Audit events | `/api/v1/audit` |
+
+All organization-facing endpoints require authentication and enforce organization scope, except the explicitly token-protected public supplier portal routes. See the domain documentation for request/response details and role requirements.
+
+## Security and operational controls
+
+Implemented controls include tenant-aware authorization, PostgreSQL RLS, HttpOnly refresh-cookie sessions, role-based review actions, Helmet security headers, explicit CORS origin, layered API rate limits, immutable calculation/factor snapshots, audit events, encrypted webhook secrets and destination-safe webhook delivery.
+
+Recent hardening also adds request correlation IDs and privacy-conscious structured HTTP logs. Logs intentionally omit raw URLs, query strings, request bodies, authorization headers, IP addresses and user identifiers. This is an application logging baseline—not a substitute for centralized log retention, alerting, metrics or error tracking.
+
+### Pre-deployment gates
+
+Deployment is intentionally left to the repository owner. Before manually deploying, complete every relevant item in **[the pre-deployment readiness checklist](docs/operations/pre-deployment-readiness.md)**, including:
+
+- Commit `pnpm-lock.yaml` and move CI to `pnpm install --frozen-lockfile`.
+- Configure a shared rate-limit store before running multiple API replicas.
+- Set production secrets, TLS, proxy trust, CORS and restricted database roles.
+- Configure backups and complete a restore rehearsal.
+- Provide private object storage, malware scanning and secure evidence delivery.
+- Configure supplier invitation email delivery if required.
+- Add centralized observability, alerting and incident response ownership.
+- Complete independent security review and production-like smoke tests.
+
+## Known limitations — stated transparently
+
+- No official emission-factor dataset is bundled; organizations must load validated, source-backed factors.
+- Scope 3 coverage depends on configured categories and available supplier/activity data.
+- Evidence currently stores metadata only; no binary upload, scanning or download vault.
+- Supplier invitation delivery is manual; no email provider is integrated.
+- Activity and supplier submission lists have current first-page limits and need cursor pagination for larger tenants.
+- Reduction baselines are manually supplied; scenario projections are estimates, not verified realized reductions.
+- Data-quality scoring is heuristic and advisory, not a formal assurance opinion.
+- Audit CSV SHA-256 is a file-integrity digest, not a tamper-evident hash chain or third-party timestamp.
+- API rate limits currently use process-local memory; use a shared store before horizontal scaling.
+- Centralized metrics, tracing, alerting, lockfile-based reproducibility and independent penetration testing remain release gates.
+
+## Roadmap
+
+- [x] Foundation, workspace and local PostgreSQL infrastructure
+- [x] Identity, organizations, roles and tenant isolation
+- [x] Facilities, activity records and emission-factor APIs
+- [x] Deterministic calculation engine and immutable snapshots
+- [x] CSV import preview, validation and commit
+- [x] Supplier questionnaires and secure invitation portal
+- [x] Evidence metadata and append-only review decisions
+- [x] Reduction targets, initiatives and scenario APIs
+- [x] Analytics, emissions exports and audit exports
+- [x] Webhook outbox and delivery worker
+- [x] Authenticated dashboard, activity, facility and supplier workspaces
+- [x] Data-quality intelligence workspace
+- [x] Request correlation IDs and structured HTTP logs
+- [ ] Lockfile and frozen CI installation
+- [ ] Shared rate-limit storage and production observability integrations
+- [ ] Evidence object storage, scanning and supplier email delivery
+- [ ] Independent security review and deployment validation
+
+## Documentation
+
+- [System design](docs/architecture/system-design.md)
+- [Product scope](docs/product/mvp-scope.md)
+- [Web dashboard](docs/product/web-dashboard.md)
+- [Activity data workspace](docs/product/activity-data-workspace.md)
+- [Supplier workspace](docs/product/supplier-workspace.md)
+- [Calculation engine](docs/domain/calculation-engine.md)
+- [Data quality and reporting](docs/domain/analytics-and-reporting.md)
+- [Webhook delivery worker](docs/domain/webhook-delivery-worker.md)
+- [Identity and tenancy security](docs/security/identity-and-tenancy.md)
+- [API abuse controls](docs/security/api-abuse-controls-and-dependency-hardening.md)
+- [Pre-deployment checklist](docs/operations/pre-deployment-readiness.md)
+
+## Project boundary
+
+CarbonLedger is a software engineering project and demonstration. It is not an accredited GHG assurance service, legal opinion, compliance certification or guarantee of regulatory acceptance. Framework-aligned workflows do not replace qualified methodology selection, evidence verification, professional review or external assurance.
 
 ## License
 
-No license has been selected. Until one is added, all rights are reserved by the repository owner.
+No open-source license has been selected. Until a license is added, all rights are reserved by the repository owner.
