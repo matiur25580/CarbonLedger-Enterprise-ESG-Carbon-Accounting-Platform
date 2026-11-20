@@ -16,6 +16,9 @@ const adminPrisma = env.DATABASE_ADMIN_URL
 
 after(async () => {
   if (adminPrisma && createdOrganizations.length) {
+    await adminPrisma.activityRecord.deleteMany({ where: { organizationId: { in: createdOrganizations } } });
+    await adminPrisma.emissionFactor.deleteMany({ where: { organizationId: { in: createdOrganizations } } });
+    await adminPrisma.facility.deleteMany({ where: { organizationId: { in: createdOrganizations } } });
     await adminPrisma.auditLog.deleteMany({ where: { organizationId: { in: createdOrganizations } } });
     await adminPrisma.organization.deleteMany({ where: { id: { in: createdOrganizations } } });
   }
@@ -80,5 +83,85 @@ describe("identity and tenant isolation integration", () => {
     const switched = await switchOrganization(first.user.id, second.organization.id, first.refreshToken);
     const rotated = await rotateRefreshToken(switched.refreshToken);
     assert.equal(verifyAccessToken(rotated.accessToken).organizationId, second.organization.id);
+  });
+});
+
+describe("facility, activity and factor tenancy", () => {
+  it("creates source-backed records and prevents cross-organization visibility", async () => {
+    const suffix = randomUUID();
+    const account = await register({
+      name: "ESG Data Owner",
+      email: `esg-owner-${suffix}@example.test`,
+      password: "EnterprisePass123",
+      organizationName: "ESG Test Organization",
+      organizationSlug: `esg-test-${suffix.slice(0, 8)}`
+    });
+    createdUsers.push(account.user.id);
+    createdOrganizations.push(account.organization.id);
+
+    const facility = await withTenantContext(account.organization.id, (tx) =>
+      tx.facility.create({
+        data: {
+          organizationId: account.organization.id,
+          code: "PLANT-01",
+          name: "Primary Manufacturing Plant",
+          countryCode: "IN",
+          city: "Kolkata",
+          createdByUserId: account.user.id
+        }
+      })
+    );
+    const factor = await withTenantContext(account.organization.id, (tx) =>
+      tx.emissionFactor.create({
+        data: {
+          organizationId: account.organization.id,
+          code: "GRID-IN",
+          version: 1,
+          name: "India grid electricity factor",
+          category: "ELECTRICITY",
+          scope: "SCOPE_2",
+          unit: "kWh",
+          geographyCode: "IN",
+          kgCo2ePerUnit: "0.710000000000",
+          sourceName: "Organization-approved factor source",
+          sourceVersion: "2026.1",
+          methodology: "Location-based electricity factor; illustrative test fixture, not an official published value.",
+          validFrom: new Date("2026-01-01T00:00:00.000Z"),
+          createdByUserId: account.user.id
+        }
+      })
+    );
+    const activity = await withTenantContext(account.organization.id, (tx) =>
+      tx.activityRecord.create({
+        data: {
+          organizationId: account.organization.id,
+          facilityId: facility.id,
+          category: "ELECTRICITY",
+          scope: "SCOPE_2",
+          quantity: "1250.500000",
+          unit: "kWh",
+          periodStart: new Date("2026-10-01T00:00:00.000Z"),
+          periodEnd: new Date("2026-10-31T00:00:00.000Z"),
+          sourceName: "Utility invoice",
+          sourceReference: "INV-TEST-001",
+          createdByUserId: account.user.id
+        }
+      })
+    );
+
+    assert.equal(facility.countryCode, "IN");
+    assert.equal(factor.status, "DRAFT");
+    assert.equal(factor.version, 1);
+    assert.equal(activity.status, "DRAFT");
+
+    const visibleActivity = await withTenantContext(account.organization.id, (tx) =>
+      tx.activityRecord.findUnique({ where: { id: activity.id } })
+    );
+    assert.equal(visibleActivity?.id, activity.id);
+
+    const invisibleActivity = await withTenantContext(randomUUID(), (tx) =>
+      tx.activityRecord.findUnique({ where: { id: activity.id } })
+    );
+    assert.equal(invisibleActivity, null);
   });
 });
