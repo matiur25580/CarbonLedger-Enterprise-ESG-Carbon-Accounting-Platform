@@ -1,9 +1,8 @@
 import { prisma } from "../lib/prisma.js";
 import { withTenantContext } from "../auth/tenant-context.js";
-import { decryptInvitationEmail, sendInvitationEmail } from "./invitation-email.js";
+import { decryptInvitationEmail, invitationEmailRetryDelayMs, sendInvitationEmail } from "./invitation-email.js";
 type Job={id:string;organization_id:string;invitation_id:string;payload_ciphertext:string;payload_iv:string;payload_auth_tag:string;attempts:number;locked_at:Date};
 const MAX_ATTEMPTS=6,BATCH_SIZE=5,POLL_MS=5000;
-function backoff(attempt:number){return Math.min(6*60*60*1000,30000*2**Math.min(10,Math.max(0,attempt-1)));}
 async function claim(org:string):Promise<Job[]>{
  return withTenantContext(org,tx=>tx.$queryRaw<Job[]>\`
   WITH due AS (SELECT id FROM supplier_invitation_emails WHERE organization_id=${org}::uuid AND attempts<${MAX_ATTEMPTS} AND ((status='PENDING' AND next_attempt_at<=NOW()) OR (status='PROCESSING' AND locked_at<NOW()-INTERVAL '2 minutes')) ORDER BY next_attempt_at,created_at FOR UPDATE SKIP LOCKED LIMIT ${BATCH_SIZE})
@@ -15,7 +14,7 @@ async function finish(job:Job,status:"SENT"|"PENDING"|"FAILED",data:{messageId?:
  return withTenantContext(job.organization_id,async tx=>{
   const result=await tx.supplierInvitationEmail.updateMany({where:{id:job.id,organizationId:job.organization_id,status:"PROCESSING",lockedAt:job.locked_at},data:{
    status,lockedAt:null,lastError:data.error?.slice(0,1000)??null,providerMessageId:data.messageId??undefined,
-   sentAt:status==="SENT"?new Date():null,nextAttemptAt:status==="PENDING"?new Date(Date.now()+backoff(job.attempts)):new Date(),updatedAt:new Date()
+   sentAt:status==="SENT"?new Date():null,nextAttemptAt:status==="PENDING"?new Date(Date.now()+invitationEmailRetryDelayMs(job.attempts)):new Date(),updatedAt:new Date()
   }});
   if(result.count!==1)return false;
   if(status==="SENT")await tx.auditLog.create({data:{organizationId:job.organization_id,actorUserId:null,action:"supplier.invitation_email_sent",resourceType:"supplier_invitation",resourceId:job.invitation_id,metadata:{deliveryId:job.id,provider:"resend",providerMessageId:data.messageId??null}}});
