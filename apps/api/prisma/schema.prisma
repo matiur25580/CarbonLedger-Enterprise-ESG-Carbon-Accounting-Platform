@@ -85,8 +85,8 @@ model AuditLog {
   resourceId   String       @map("resource_id") @db.VarChar(120)
   metadata     Json?
   createdAt    DateTime     @default(now()) @map("created_at")
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  actor        User?        @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  actor        User?        @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: Restrict)
 
   @@index([organizationId, createdAt])
   @@index([organizationId, resourceType, resourceId])
