@@ -33,7 +33,7 @@ const rowSchema = z.object({
 
 type ValidRow = z.infer<typeof rowSchema> & { rowNumber: number; facilityId: string; fingerprint: string };
 type RowIssue = { rowNumber: number; code: string; message: string };
-type Preview = { totalRows: number; validRows: number; duplicateRows: number; errorRows: number; canCommit: boolean; issues: RowIssue[]; duplicateDetails: Array<{rowNumber:number; duplicateOf?:number; reason:string}>; contentSha256: string; fileName: string };
+type Preview = { totalRows: number; validRows: number; duplicateRows: number; errorRows: number; qualityScore: number; canCommit: boolean; issues: RowIssue[]; duplicateDetails: Array<{rowNumber:number; duplicateOf?:number; reason:string}>; contentSha256: string; fileName: string };
 
 const requestSchema = z.object({
   fileName: z.string().trim().min(1).max(180).regex(/^[^/\\\\\u0000-\u001f]+$/, "File name must not contain path separators or control characters"),
@@ -44,7 +44,7 @@ async function buildPreview(tx: PrismaTypes.TransactionClient, organizationId: s
   const contentSha256 = sha256(csvText);
   const parsed = parseCsv(csvText);
   const empty = (issues: RowIssue[] = []): { preview: Preview; validRows: ValidRow[] } => ({
-    preview: { totalRows: 0, validRows: 0, duplicateRows: 0, errorRows: issues.length, canCommit: false, issues, duplicateDetails: [], contentSha256, fileName },
+    preview: { totalRows: 0, validRows: 0, duplicateRows: 0, errorRows: issues.length, qualityScore: 0, canCommit: false, issues, duplicateDetails: [], contentSha256, fileName },
     validRows: []
   });
   if (Buffer.byteLength(csvText, "utf8") > 1024 * 1024) return empty([{ rowNumber: 0, code: "FILE_TOO_LARGE", message: "CSV must not exceed 1 MiB" }]);
@@ -130,6 +130,7 @@ async function buildPreview(tx: PrismaTypes.TransactionClient, organizationId: s
   const errorRows = new Set(issues.map((issue) => issue.rowNumber)).size;
   const preview: Preview = {
     totalRows: dataRows.length, validRows: validRows.length - duplicateRows, duplicateRows, errorRows,
+    qualityScore: dataRows.length ? Math.max(0, Math.round(((dataRows.length - errorRows - duplicateRows) / dataRows.length) * 100)) : 0,
     canCommit: issues.length === 0 && duplicateRows === 0 && validRows.length === dataRows.length,
     issues, duplicateDetails, contentSha256, fileName
   };
