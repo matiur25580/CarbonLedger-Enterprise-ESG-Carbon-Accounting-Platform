@@ -159,7 +159,7 @@ function ActivityWorkspace({ session, activeNav }: { session: Session; activeNav
         request<{batches:Array<{id:string;fileName:string;totalRows:number;importedRows:number;status:string;createdAt:string}>}>("/activity-imports?limit=10")
       ]);
       setFacilities(facilityData.facilities); setRecords(recordData.records); setImports(importData.batches);
-      if (!facilityId && facilityData.facilities.find(item => item.isActive)) setFacilityId(facilityData.facilities.find(item => item.isActive)!.id);
+      setFacilityId(current => current || facilityData.facilities.find(item => item.isActive)?.id || "");
     } catch (err) { setError(err instanceof Error ? err.message : "Unable to load activity workspace"); }
     finally { setLoading(false); }
   }, []);
@@ -213,7 +213,7 @@ function ActivityWorkspace({ session, activeNav }: { session: Session; activeNav
   if (activeNav === "Facilities") return <div className="dashboard-content">
     <div className="page-heading"><div><div className="section-kicker">OPERATING FOOTPRINT</div><h1>Facilities</h1><p>Manage the locations that anchor your organization's activity records.</p></div><button className="export-button" onClick={() => void load()}>↻ Refresh</button></div>
     {error && <div className="notice-error" role="alert">{error}</div>}{notice && <div className="notice-success" role="status">{notice}</div>}
-    {canManageFacilities && <form className="panel facility-create" onSubmit={async e=>{e.preventDefault();const form=new FormData(e.currentTarget);setBusy(true);setError("");try{await request("/facilities",{method:"POST",body:JSON.stringify({code:String(form.get("code")),name:String(form.get("name")),countryCode:String(form.get("countryCode")),city:String(form.get("city")||""),region:String(form.get("region")||""),timezone:String(form.get("timezone")||"UTC")})});setNotice("Facility created.");e.currentTarget.reset();await load();}catch(err){setError(err instanceof Error?err.message:"Facility creation failed");}finally{setBusy(false);}}}>
+    {canManageFacilities && <form className="panel facility-create" onSubmit={async e=>{e.preventDefault();const formElement=e.currentTarget;const form=new FormData(formElement);setBusy(true);setError("");try{await request("/facilities",{method:"POST",body:JSON.stringify({code:String(form.get("code")),name:String(form.get("name")),countryCode:String(form.get("countryCode")),city:String(form.get("city")||""),region:String(form.get("region")||""),timezone:String(form.get("timezone")||"UTC")})});setNotice("Facility created.");formElement.reset();await load();}catch(err){setError(err instanceof Error?err.message:"Facility creation failed");}finally{setBusy(false);}}}>
       <div className="panel-heading"><div><span className="section-kicker">NEW LOCATION</span><h2>Add a facility</h2></div><span className="unit-label">OWNER / ADMIN</span></div>
       <div className="form-grid"><label>Facility code<input name="code" required minLength={2} maxLength={40} pattern="[A-Za-z0-9_-]+" placeholder="PLANT-01"/></label><label>Facility name<input name="name" required minLength={2} maxLength={160} placeholder="Kolkata manufacturing site"/></label><label>Country code<input name="countryCode" required minLength={2} maxLength={2} defaultValue="IN" pattern="[A-Za-z]{2}"/></label><label>City<input name="city" maxLength={120} placeholder="Kolkata"/></label><label>Region / state<input name="region" maxLength={120} placeholder="West Bengal"/></label><label>Timezone<input name="timezone" defaultValue="Asia/Kolkata" maxLength={80}/></label></div>
       <button className="primary-button form-submit" disabled={busy}>{busy?<Spinner/>:"Create facility"}</button>
@@ -296,7 +296,7 @@ function Dashboard({ session, onLogout }: { session: Session; onLogout: () => vo
     </aside>
     <main className="main-panel">
       <header className="main-header"><div className="breadcrumbs">Workspace <span>/</span> <b>{activeNav}</b></div><div className="header-actions"><span className="header-date">{new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(today)}</span><button className="icon-button" aria-label="Refresh analytics" onClick={() => void load()}>↻</button><div className="profile-wrap"><button className="profile-button" onClick={() => setProfileOpen(!profileOpen)}><span className="profile-avatar">{session.user.name.slice(0,1).toUpperCase()}</span><span className="profile-name">{session.user.name}</span><span>⌄</span></button>{profileOpen && <div className="profile-menu"><b>{session.user.name}</b><small>{session.user.email}</small><button onClick={onLogout}>Sign out</button></div>}</div></div></header>
-      <section className="dashboard-content">
+      {activeNav === "Activity data" || activeNav === "Facilities" ? <ActivityWorkspace session={session} activeNav={activeNav} /> : <section className="dashboard-content">
         <div className="page-heading"><div><div className="section-kicker">SUSTAINABILITY OVERVIEW</div><h1>Good {today.getHours() < 12 ? "morning" : today.getHours() < 18 ? "afternoon" : "evening"}, {session.user.name.split(" ")[0]}.</h1><p>Here’s your organization's emissions and climate performance at a glance.</p></div><button className="export-button" onClick={() => void csvDownload()}>↓ <span>Export emissions</span></button></div>
         <div className="filter-bar"><div className="filter-title"><span>◷</span> REPORTING PERIOD</div><label>From<input type="date" value={from} max={to} onChange={e => setFrom(e.target.value)} /></label><span className="filter-separator">—</span><label>To<input type="date" value={to} min={from} max={dateString(today)} onChange={e => setTo(e.target.value)} /></label><button onClick={() => void load()} disabled={loading}>{loading ? <Spinner /> : "Apply filters"}</button></div>
         {error && <div className="notice-error" role="alert">{error} <button onClick={() => void load()}>Retry</button></div>}
@@ -325,7 +325,7 @@ function Dashboard({ session, onLogout }: { session: Session; onLogout: () => vo
           </section>
         </div>
         <footer className="dashboard-footer"><span>CARBONLEDGER · SUSTAINABILITY INTELLIGENCE</span><span>Data shown from saved calculation snapshots · {from} — {to}</span></footer>
-      </section>
+      </section>}
     </main>
   </div>;
 }
