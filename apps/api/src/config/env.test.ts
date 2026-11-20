@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { envSchema } from "./env.js";
+import { envSchema } from "./env-schema.js";
 
 describe("API environment schema", () => {
   it("accepts a valid PostgreSQL connection and port", () => {
