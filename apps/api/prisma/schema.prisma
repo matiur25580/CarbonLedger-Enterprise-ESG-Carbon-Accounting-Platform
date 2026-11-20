@@ -54,6 +54,10 @@ enum EmissionFactorStatus {
   RETIRED
 }
 
+enum ActivityImportStatus {
+  COMMITTED
+}
+
 model User {
   id            String                   @id @default(uuid()) @db.Uuid
   name          String                   @db.VarChar(100)
@@ -70,6 +74,7 @@ model User {
   activitiesReviewed ActivityRecord[]    @relation("ActivityReviewer")
   calculationRunsCreated CalculationRun[] @relation("CalculationCreator")
   factorsCreated EmissionFactor[]        @relation("FactorCreator")
+  activityImports ActivityImportBatch[]  @relation("ActivityImportCreator")
 
   @@map("users")
 }
@@ -88,6 +93,7 @@ model Organization {
   emissionFactors EmissionFactor[]
   calculationRuns CalculationRun[]
   calculationResults CalculationResult[]
+  activityImports ActivityImportBatch[]
 
   @@map("organizations")
 }
@@ -190,7 +196,29 @@ model ActivityRecord {
   @@index([organizationId, periodStart, periodEnd])
   @@unique([id, organizationId])
   @@index([organizationId, facilityId, category, status])
+  @@index([organizationId, importBatchId])
   @@map("activity_records")
+}
+
+model ActivityImportBatch {
+  id              String              @id @default(uuid()) @db.Uuid
+  organizationId  String              @map("organization_id") @db.Uuid
+  createdByUserId String              @map("created_by_user_id") @db.Uuid
+  fileName        String              @map("file_name") @db.VarChar(180)
+  contentSha256   String              @map("content_sha256") @db.Char(64)
+  status          ActivityImportStatus @default(COMMITTED)
+  totalRows       Int                 @map("total_rows")
+  importedRows    Int                 @map("imported_rows")
+  report          Json
+  createdAt       DateTime            @default(now()) @map("created_at")
+  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  createdBy       User                @relation("ActivityImportCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  activities      ActivityRecord[]
+
+  @@unique([id, organizationId])
+  @@unique([organizationId, contentSha256])
+  @@index([organizationId, createdAt])
+  @@map("activity_import_batches")
 }
 
 model EmissionFactor {
