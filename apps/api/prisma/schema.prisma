@@ -19,6 +19,41 @@ enum OrgRole {
   AUDITOR
 }
 
+enum ActivityCategory {
+  ELECTRICITY
+  NATURAL_GAS
+  DIESEL
+  PETROL
+  LPG
+  REFRIGERANTS
+  COMPANY_VEHICLES
+  BUSINESS_TRAVEL
+  WASTE
+  WATER
+  PURCHASED_GOODS
+  FREIGHT
+  OTHER
+}
+
+enum EmissionScope {
+  SCOPE_1
+  SCOPE_2
+  SCOPE_3
+}
+
+enum ActivityStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum EmissionFactorStatus {
+  DRAFT
+  PUBLISHED
+  RETIRED
+}
+
 model User {
   id            String                   @id @default(uuid()) @db.Uuid
   name          String                   @db.VarChar(100)
@@ -30,6 +65,10 @@ model User {
   memberships   OrganizationMembership[]
   refreshTokens RefreshToken[]
   auditEvents   AuditLog[]               @relation("AuditActor")
+  facilitiesCreated Facility[]           @relation("FacilityCreator")
+  activitiesCreated ActivityRecord[]     @relation("ActivityCreator")
+  activitiesReviewed ActivityRecord[]    @relation("ActivityReviewer")
+  factorsCreated EmissionFactor[]        @relation("FactorCreator")
 
   @@map("users")
 }
@@ -43,6 +82,9 @@ model Organization {
   memberships OrganizationMembership[]
   auditEvents AuditLog[]
   refreshTokens RefreshToken[]
+  facilities    Facility[]
+  activities    ActivityRecord[]
+  emissionFactors EmissionFactor[]
 
   @@map("organizations")
 }
@@ -91,4 +133,91 @@ model AuditLog {
   @@index([organizationId, createdAt])
   @@index([organizationId, resourceType, resourceId])
   @@map("audit_logs")
+}
+
+model Facility {
+  id              String       @id @default(uuid()) @db.Uuid
+  organizationId  String       @map("organization_id") @db.Uuid
+  code            String       @db.VarChar(40)
+  name            String       @db.VarChar(160)
+  countryCode     String       @map("country_code") @db.Char(2)
+  region          String?      @db.VarChar(120)
+  city            String?      @db.VarChar(120)
+  addressLine1    String?      @map("address_line_1") @db.VarChar(200)
+  timezone        String       @default("UTC") @db.VarChar(80)
+  isActive        Boolean      @default(true) @map("is_active")
+  createdByUserId String       @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  createdBy       User         @relation("FacilityCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  activities      ActivityRecord[]
+
+  @@unique([organizationId, code])
+  @@unique([id, organizationId])
+  @@index([organizationId, isActive, name])
+  @@map("facilities")
+}
+
+model ActivityRecord {
+  id               String           @id @default(uuid()) @db.Uuid
+  organizationId   String           @map("organization_id") @db.Uuid
+  facilityId       String           @map("facility_id") @db.Uuid
+  category         ActivityCategory
+  scope            EmissionScope
+  quantity         Decimal          @db.Decimal(20, 6)
+  unit             String           @db.VarChar(40)
+  periodStart      DateTime         @map("period_start") @db.Date
+  periodEnd        DateTime         @map("period_end") @db.Date
+  sourceName       String           @map("source_name") @db.VarChar(160)
+  sourceReference  String?          @map("source_reference") @db.VarChar(240)
+  notes            String?          @db.VarChar(2000)
+  status           ActivityStatus   @default(DRAFT)
+  createdByUserId  String           @map("created_by_user_id") @db.Uuid
+  reviewedByUserId String?          @map("reviewed_by_user_id") @db.Uuid
+  submittedAt      DateTime?        @map("submitted_at")
+  reviewedAt       DateTime?        @map("reviewed_at")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  facility         Facility         @relation(fields: [facilityId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  createdBy        User             @relation("ActivityCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  reviewedBy       User?            @relation("ActivityReviewer", fields: [reviewedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, periodStart, periodEnd])
+  @@index([organizationId, facilityId, category, status])
+  @@map("activity_records")
+}
+
+model EmissionFactor {
+  id                 String               @id @default(uuid()) @db.Uuid
+  organizationId     String               @map("organization_id") @db.Uuid
+  code               String               @db.VarChar(80)
+  version            Int                  @default(1)
+  name               String               @db.VarChar(180)
+  category           ActivityCategory
+  scope              EmissionScope
+  unit               String               @db.VarChar(40)
+  geographyCode      String               @map("geography_code") @db.VarChar(12)
+  kgCo2ePerUnit      Decimal              @map("kg_co2e_per_unit") @db.Decimal(24, 12)
+  sourceName         String               @map("source_name") @db.VarChar(180)
+  sourceUrl          String?              @map("source_url") @db.VarChar(500)
+  sourceVersion      String               @map("source_version") @db.VarChar(80)
+  methodology        String               @db.VarChar(2000)
+  uncertaintyPercent Decimal?             @map("uncertainty_percent") @db.Decimal(7, 4)
+  validFrom          DateTime             @map("valid_from") @db.Date
+  validTo            DateTime?            @map("valid_to") @db.Date
+  status             EmissionFactorStatus @default(DRAFT)
+  createdByUserId    String               @map("created_by_user_id") @db.Uuid
+  publishedAt        DateTime?            @map("published_at")
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  organization       Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  createdBy          User                 @relation("FactorCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, code, version])
+  @@unique([id, organizationId])
+  @@index([organizationId, category, geographyCode, status])
+  @@index([organizationId, validFrom, validTo])
+  @@map("emission_factors")
 }
