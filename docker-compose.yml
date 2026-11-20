@@ -5,14 +5,15 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: carbonledger
-      POSTGRES_USER: carbonledger
-      POSTGRES_PASSWORD: carbonledger_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_dev
     ports:
       - "5432:5432"
     volumes:
       - carbonledger-postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U carbonledger -d carbonledger"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d carbonledger"]
       interval: 5s
       timeout: 5s
       retries: 10
