@@ -31,7 +31,7 @@ async function complete(job:ScanJob,verdict:"CLEAN"|"FAILED"|"PENDING",error?:st
   await tx.auditLog.create({data:{organizationId:job.organization_id,actorUserId:job.uploaded_by_user_id,action:"supplier.evidence_scanned_and_registered",resourceType:"supplier_evidence",resourceId:job.id,metadata:{submissionId:job.submission_id,sha256:hash,byteSize:job.byte_size.toString(),scanner:engine,scanStatus:"CLEAN"}}});
  });
 }
-async function process(job:ScanJob){
+async function processJob(job:ScanJob){
  try{
   const bytes=await readEvidenceObject(job.object_key);
   if(BigInt(bytes.length)!==job.byte_size)throw new Error("Stored object size changed after upload verification");
@@ -55,7 +55,7 @@ export async function runEvidenceScanWorker():Promise<void>{
   while(!stopping){
    try{
     const orgs=await prisma.organization.findMany({select:{id:true}});
-    for(const org of orgs){if(stopping)break;for(const job of await claimJobs(org.id)){if(stopping)break;await process(job);}}
+    for(const org of orgs){if(stopping)break;for(const job of await claimJobs(org.id)){if(stopping)break;await processJob(job);}}
    }catch(error){console.error("Evidence scan poll failed",error);}
    if(!stopping)await new Promise(resolve=>setTimeout(resolve,POLL_MS));
   }
