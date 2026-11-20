@@ -331,6 +331,7 @@ model SupplierSubmission {
   evidence         SupplierEvidence[]
   reviews          SupplierSubmissionReview[]
   @@unique([id, organizationId])
+  @@unique([invitationId, organizationId])
   @@index([organizationId, supplierId, submittedAt])
   @@map("supplier_submissions")
 }
