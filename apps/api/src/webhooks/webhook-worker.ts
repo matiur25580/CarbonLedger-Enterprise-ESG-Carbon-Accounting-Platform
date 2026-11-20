@@ -145,7 +145,6 @@ export async function runWebhookWorker(): Promise<void> {
     if (active) console.info("Webhook worker draining");
     process.off("SIGINT", stop);
     process.off("SIGTERM", stop);
-    await prisma.$disconnect();
     console.info("CarbonLedger webhook worker stopped");
   }
 }
