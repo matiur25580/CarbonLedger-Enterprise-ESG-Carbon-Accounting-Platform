@@ -90,13 +90,20 @@ The local database credentials in `.env.example` are for development only. Never
 
 The React application now includes organization registration, sign-in, HttpOnly refresh-cookie session restoration, in-memory access-token handling, and a responsive ESG overview dashboard connected to `GET /api/v1/analytics/overview`. It visualizes calculation-backed emissions totals, monthly trend, Scope 1/2/3 mix, facility footprint, supplier submission coverage and reduction scenario snapshots. The reporting period is configurable and users can export the corresponding emissions CSV.
 
-Navigation for Emissions, Activity data, Facilities, Suppliers, Reduction plans and Audit & compliance is currently a product shell; these dedicated frontend workspaces are not yet implemented. No demo emissions values are fabricated. See `docs/product/web-dashboard.md`.
+Navigation for Emissions, Reduction plans and Audit & compliance remains a product shell. Activity data, Facilities and Suppliers now have dedicated API-connected workspaces. No demo emissions values are fabricated. See `docs/product/web-dashboard.md`, `docs/product/activity-data-workspace.md` and `docs/product/supplier-workspace.md`.
 
 ## Activity data and facility workspaces (Phase 13)
 
 The React client now includes organization-scoped facility management and an activity data workspace: create and activate facilities, capture source-linked activity records as drafts, submit records for review, approve/reject submissions according to role, preview and commit validated CSV imports, inspect recent import batches, and calculate approved records through the deterministic calculation API. The UI consumes the existing tenant-aware API; it does not fabricate emission factors or calculated values.
 
 Current frontend limitation: the activity register loads up to the first 100 records and does not yet expose cursor pagination. Binary evidence attachment and dedicated emission-factor catalogue UI remain future work. See `docs/product/activity-data-workspace.md`.
+
+
+## Supplier sustainability workspace (Phase 14)
+
+The Suppliers navigation now includes supplier onboarding and status management, a versioned questionnaire builder (TEXT, NUMBER, BOOLEAN and CHOICE), publish controls, secure single-use seven-day invitations, a public supplier questionnaire route, immutable answer review, append-only review decisions, and evidence-reference metadata registration. OWNER/ADMIN manage suppliers and questionnaires; OWNER/ADMIN/AUDITOR can record review decisions.
+
+Invitation URLs are shown once and must be distributed manually through an approved channel; email delivery is not implemented. The public supplier portal uses the signed invitation token and the API remains authoritative for validation. Evidence registration stores metadata only: it does not upload, scan, verify or deliver binary files. The UI currently loads the latest 100 submissions without cursor pagination. See `docs/product/supplier-workspace.md`.
 
 ## Identity and organization API (Phase 2)
 
@@ -242,7 +249,10 @@ Exports include an `X-Content-SHA256` digest over the exact CSV bytes, a record 
 - [x] Phase 9 — Analytics and reporting
 - [x] Phase 10 — Integrations, webhooks and background processing (worker code; hosted deployment is manual)
 - [x] Phase 11 — Compliance audit center and verifiable exports
-- [ ] Phase 12 — Security, performance, accessibility and production hardening
+- [x] Phase 12 — Authenticated analytics dashboard
+- [x] Phase 13 — Activity data and facility workspaces
+- [x] Phase 14 — Supplier sustainability workspace
+- [ ] Phase 15 — Security, performance, accessibility and production hardening
 
 See `docs/product/mvp-scope.md` and `docs/architecture/system-design.md`.
 
