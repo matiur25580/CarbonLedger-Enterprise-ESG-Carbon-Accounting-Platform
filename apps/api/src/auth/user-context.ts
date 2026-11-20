@@ -6,7 +6,7 @@ export async function withUserContext<T>(
   callback: (tx: Prisma.TransactionClient) => Promise<T>
 ): Promise<T> {
   return prisma.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT set_config('app.current_user_id', ${userId}, true)`;
+    await tx.$queryRaw`SELECT set_config('app.current_user_id', ${userId}, true)`;
     return callback(tx);
   });
 }
