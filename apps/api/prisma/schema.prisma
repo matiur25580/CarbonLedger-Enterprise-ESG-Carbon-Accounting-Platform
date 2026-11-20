@@ -615,6 +615,7 @@ model SupplierInvitationEmail {
   invitation         SupplierInvitation @relation(fields: [invitationId, organizationId], references: [id, organizationId], onDelete: Restrict)
   @@unique([id, organizationId])
   @@unique([invitationId])
+  @@unique([invitationId, organizationId])
   @@index([status, nextAttemptAt, createdAt])
   @@index([organizationId, createdAt])
   @@map("supplier_invitation_emails")
