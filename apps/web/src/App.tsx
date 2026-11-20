@@ -390,6 +390,16 @@ function Dashboard({ session, onLogout }: { session: Session; onLogout: () => vo
   </div>;
 }
 
+
+function PublicSupplierPortal({token}:{token:string}){
+ type PortalQuestion={id:string;label:string;type:"TEXT"|"NUMBER"|"BOOLEAN"|"CHOICE";required:boolean;options?:string[]};
+ const [data,setData]=useState<{supplier:{name:string};questionnaire:{title:string;description?:string;version:number;questions:PortalQuestion[]}}|null>(null);
+ const [answers,setAnswers]=useState<Record<string,unknown>>({}),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(""),[submitted,setSubmitted]=useState(false);
+ useEffect(()=>{const controller=new AbortController();fetch(api("/suppliers/portal/"+encodeURIComponent(token)),{signal:controller.signal}).then(async r=>{if(!r.ok){const b=await r.json().catch(()=>null);throw new Error(b?.error?.message||"Invitation is invalid or expired");}return r.json();}).then(v=>{if(!controller.signal.aborted)setData(v);}).catch(e=>{if(!controller.signal.aborted)setError(e instanceof Error?e.message:"Unable to load questionnaire");}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});return()=>controller.abort();},[token]);
+ async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);setError("");try{const r=await fetch(api("/suppliers/portal/"+encodeURIComponent(token)+"/submit"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({answers})});const b=await r.json().catch(()=>null);if(!r.ok)throw new Error(b?.error?.message||"Submission failed");setSubmitted(true);}catch(e){setError(e instanceof Error?e.message:"Submission failed");}finally{setBusy(false);}}
+ return <main className="supplier-portal-page"><div className="supplier-portal-card"><Brand/>{loading?<div className="chart-loading"><Spinner/> Loading secure questionnaire…</div>:submitted?<div className="portal-success"><span>✓</span><h1>Response submitted</h1><p>Thank you. Your supplier questionnaire has been submitted successfully. This invitation can no longer be reused.</p></div>:error&&!data?<div className="portal-error"><h1>Invitation unavailable</h1><p>{error}</p></div>:data&&<><div className="section-kicker">SECURE SUPPLIER DISCLOSURE</div><h1>{data.questionnaire.title}</h1><p className="muted">{data.questionnaire.description}</p><div className="portal-supplier">Prepared for <b>{data.supplier.name}</b> · Questionnaire v{data.questionnaire.version}</div><form className="portal-form" onSubmit={submit}>{data.questionnaire.questions.map(q=><label key={q.id}>{q.label}{q.required&&<span> *</span>}{q.type==="TEXT"?<textarea required={q.required} maxLength={5000} rows={3} value={String(answers[q.id]??"")} onChange={e=>setAnswers(a=>({...a,[q.id]:e.target.value}))}/>:q.type==="NUMBER"?<input type="number" required={q.required} value={String(answers[q.id]??"")} onChange={e=>setAnswers(a=>({...a,[q.id]:e.target.value===""?"":Number(e.target.value)}))}/>:q.type==="BOOLEAN"?<select required={q.required} value={answers[q.id]===undefined?"":String(answers[q.id])} onChange={e=>setAnswers(a=>({...a,[q.id]:e.target.value==="true"}))}><option value="">Select response</option><option value="true">Yes</option><option value="false">No</option></select>:<select required={q.required} value={String(answers[q.id]??"")} onChange={e=>setAnswers(a=>({...a,[q.id]:e.target.value}))}><option value="">Select an option</option>{(q.options||[]).map(o=><option key={o}>{o}</option>)}</select>}</label>)}{error&&<div className="form-error" role="alert">{error}</div>}<button className="primary-button" disabled={busy}>{busy?<Spinner/>:"Submit supplier response"} <span>↗</span></button></form><div className="secure-note">This single-use invitation expires after seven days. Your response is stored as an immutable submission.</div></>}</div></main>;
+}
+
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [restoring, setRestoring] = useState(true);
@@ -414,6 +424,8 @@ export default function App() {
   const handleLogout = async () => {
     try { await fetch(api("/auth/logout"), { method: "POST", credentials: "include" }); } finally { accessToken = null; setSession(null); }
   };
+  const portalToken = window.location.pathname.startsWith("/supplier-portal/") ? window.location.pathname.split("/")[2] : "";
+  if (portalToken) return <PublicSupplierPortal token={portalToken} />;
   if (restoring) return <div className="boot-screen"><Brand /><Spinner /><span>Restoring secure workspace…</span></div>;
   return session ? <Dashboard session={session} onLogout={() => void handleLogout()} /> : <AuthScreen onSession={setSession} />;
 }
