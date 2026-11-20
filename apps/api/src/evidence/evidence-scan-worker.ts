@@ -7,7 +7,7 @@ import { scanBufferWithClamAv } from "./clamav-scanner.js";
 type ScanJob={id:string;organization_id:string;submission_id:string;uploaded_by_user_id:string;file_name:string;media_type:string;byte_size:bigint;object_key:string;description:string|null;attempts:number;locked_at:Date};
 const MAX_ATTEMPTS=5, BATCH_SIZE=3, POLL_MS=3000;
 async function claimJobs(org:string):Promise<ScanJob[]>{
- return withTenantContext(org,tx=>tx.$queryRaw<ScanJob[]>\`
+ return withTenantContext(org,tx=>tx.$queryRaw<ScanJob[]>`
   WITH due AS (
    SELECT id FROM evidence_scan_jobs WHERE organization_id=${org}::uuid AND attempts<${MAX_ATTEMPTS}
     AND ((status='PENDING' AND next_attempt_at<=NOW()) OR (status='PROCESSING' AND locked_at<NOW()-INTERVAL '3 minutes'))
@@ -16,7 +16,7 @@ async function claimJobs(org:string):Promise<ScanJob[]>{
   UPDATE evidence_scan_jobs j SET status='PROCESSING',attempts=j.attempts+1,locked_at=NOW(),last_error=NULL,updated_at=NOW()
   FROM due WHERE j.id=due.id
   RETURNING j.id,j.organization_id,j.submission_id,j.uploaded_by_user_id,j.file_name,j.media_type,j.byte_size,j.object_key,j.description,j.attempts,j.locked_at
- \`);
+ `);
 }
 async function complete(job:ScanJob,verdict:"CLEAN"|"FAILED"|"PENDING",error?:string,hash?:string,engine?:string){
  await withTenantContext(job.organization_id,async tx=>{
