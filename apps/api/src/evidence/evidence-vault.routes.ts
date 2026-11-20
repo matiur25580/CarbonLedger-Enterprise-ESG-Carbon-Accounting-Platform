@@ -42,19 +42,12 @@ evidenceVaultRouter.post("/submissions/:submissionId/evidence/:evidenceId/comple
       await deleteEvidenceObject(key).catch(()=>undefined);
       res.status(422).json({error:{code:"EVIDENCE_METADATA_MISMATCH",message:"Uploaded object size or media type does not match the upload request"}});return;
     }
-    const bytes=await readEvidenceObject(key);
-    const sha256=createHash("sha256").update(bytes).digest("hex");
-    const scan=await scanBufferWithClamAv(bytes);
-    const evidence=await withTenantContext(auth.organizationId,async tx=>{
-      const created=await tx.supplierEvidence.create({data:{
-        id:evidenceId.data,organizationId:auth.organizationId,submissionId:submissionId.data,uploadedByUserId:auth.userId,
-        fileName:body.data.fileName,mediaType:body.data.mediaType,byteSize:BigInt(bytes.length),sha256,
-        storageProvider:"s3",objectKey:key,description:body.data.description
-      }});
-      await tx.auditLog.create({data:{organizationId:auth.organizationId,actorUserId:auth.userId,action:"supplier.evidence_scanned_and_registered",resourceType:"supplier_evidence",resourceId:created.id,metadata:{submissionId:submissionId.data,sha256,byteSize:bytes.length,scanner:scan.engine,scanStatus:"CLEAN"}}});
-      return created;
+    const job=await withTenantContext(auth.organizationId,async tx=>{
+      const existing=await tx.evidenceScanJob.findFirst({where:{id:evidenceId.data,organizationId:auth.organizationId}});
+      if(existing)return existing;
+      return tx.evidenceScanJob.create({data:{id:evidenceId.data,organizationId:auth.organizationId,submissionId:submissionId.data,uploadedByUserId:auth.userId,fileName:body.data.fileName,mediaType:body.data.mediaType,byteSize:BigInt(head.byteSize),objectKey:key,description:body.data.description,status:"PENDING"}});
     });
-    res.status(201).json({evidence:{...evidence,byteSize:evidence.byteSize.toString(),scanStatus:"CLEAN"}});
+    res.status(202).json({scan:{evidenceId:job.id,status:job.status,queuedAt:job.createdAt,pollAfterSeconds:5},message:"Evidence queued for malware scanning; downloads remain unavailable until a clean verdict."});
   }catch(error){next(error);}
 });
 

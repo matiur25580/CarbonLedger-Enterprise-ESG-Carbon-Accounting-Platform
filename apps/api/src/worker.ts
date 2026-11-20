@@ -1,6 +1,7 @@
 import { runWebhookWorker } from "./webhooks/webhook-worker.js";
+import { runEvidenceScanWorker } from "./evidence/evidence-scan-worker.js";
 
-runWebhookWorker().catch((error) => {
-  console.error("Webhook worker terminated", error);
+Promise.all([runWebhookWorker(), runEvidenceScanWorker()]).catch((error) => {
+  console.error("Background worker process terminated", error);
   process.exitCode = 1;
 });

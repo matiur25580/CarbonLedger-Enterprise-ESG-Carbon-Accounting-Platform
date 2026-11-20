@@ -5,9 +5,10 @@
 1. An authenticated tenant member requests an upload intent for a supplier submission.
 2. The API verifies tenant ownership and returns a five-minute presigned S3 PUT URL under a private `quarantine/<organization>/<submission>/<evidence-id>` key.
 3. The browser uploads directly to object storage using the signed Content-Type header.
-4. The completion endpoint verifies the stored size and media type with S3, downloads at most 50 MiB, computes SHA-256 on the server and scans the bytes using ClamAV's INSTREAM protocol.
-5. Only a clean ClamAV verdict allows the API to create immutable evidence metadata.
-6. Authenticated tenant members can request a 60-second presigned download URL only for registered S3 evidence; issuance is audit logged.
+4. The completion endpoint verifies object size and media type, then enqueues a PostgreSQL scan job and returns HTTP 202.
+5. A background worker claims jobs with `FOR UPDATE SKIP LOCKED`, computes SHA-256 and scans at most 50 MiB using ClamAV INSTREAM.
+6. Only a clean verdict creates immutable evidence metadata and a scan-success audit event. Transient failures retry with bounded backoff; stale processing leases can be reclaimed.
+7. Authenticated tenant members can request a 60-second presigned download URL only for scan-approved evidence; issuance is audit logged.
 
 ## Endpoints
 
@@ -23,7 +24,7 @@ Use a private bucket with public access blocked, TLS enforced, server-side encry
 
 ## Operational limitations
 
-Scanning currently runs synchronously in the API process and buffers at most 50 MiB; high-volume production should move it to a durable queue. The API does not create evidence metadata until a clean verdict, but failed or abandoned quarantine objects need a bucket lifecycle policy. Existing metadata-only evidence records are not eligible for the S3 download endpoint. Malware scanning is a risk reduction control, not a guarantee that every file is safe.
+The PostgreSQL-backed queue is durable and supports bounded retries and lease recovery. Each worker buffers at most 50 MiB per active scan; scale worker replicas independently. The API does not create evidence metadata until a clean verdict, but failed or abandoned quarantine objects need a bucket lifecycle policy. Existing metadata-only evidence records are not eligible for the S3 download endpoint. Malware scanning is a risk reduction control, not a guarantee that every file is safe.
 
 ## Manual validation
 

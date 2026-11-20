@@ -103,7 +103,7 @@ Track evidence references, review decisions and the history associated with supp
 
 <p align="center"><img src="docs/assets/dashboards/09-evidence-review.svg" alt="Illustrative evidence and review dashboard" width="100%"></p>
 
-**Implementation:** Evidence metadata and review workflows are implemented. Binary upload, malware scanning and secure download delivery are not yet available.
+**Implementation:** Private S3-compatible uploads, queued ClamAV scanning, SHA-256 verification and short-lived authenticated downloads are implemented. Storage and scanner services require external configuration.
 
 ### 10 — Emission-factor catalogue
 Govern factor source, version, geography, unit, methodology and effective dates to make calculations reproducible.
@@ -278,7 +278,7 @@ Deployment is intentionally left to the repository owner. Before manually deploy
 
 - No official emission-factor dataset is bundled; organizations must load validated, source-backed factors.
 - Scope 3 coverage depends on configured categories and available supplier/activity data.
-- The evidence vault requires private S3-compatible storage and a reachable ClamAV daemon. Scanning is synchronous and buffers up to 50 MiB; high-volume deployments should move scanning to a durable queue.
+- The evidence vault requires private S3-compatible storage and a reachable ClamAV daemon. The PostgreSQL-backed scan worker uses retries and lease recovery; each active scan buffers at most 50 MiB.
 - Supplier invitation delivery is manual; no email provider is integrated.
 - Activity and supplier submission lists have current first-page limits and need cursor pagination for larger tenants.
 - Reduction baselines are manually supplied; scenario projections are estimates, not verified realized reductions.
@@ -306,7 +306,8 @@ Deployment is intentionally left to the repository owner. Before manually deploy
 - [x] Shared PostgreSQL rate-limit store implementation (migration and production configuration still required)
 - [ ] Production observability integrations
 - [x] Private evidence upload, ClamAV scanning and secure download API (external storage/scanner configuration required)
-- [ ] Durable asynchronous evidence scanning and supplier email delivery
+- [x] Durable asynchronous evidence scanning with retries and lease recovery
+- [ ] Supplier email delivery
 - [ ] Independent security review and deployment validation
 
 ## Documentation

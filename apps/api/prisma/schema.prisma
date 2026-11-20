@@ -568,3 +568,26 @@ model WebhookDelivery {
   @@index([eventId])
   @@map("webhook_deliveries")
 }
+
+model EvidenceScanJob {
+  id               String   @id @db.Uuid
+  organizationId   String   @map("organization_id") @db.Uuid
+  submissionId     String   @map("submission_id") @db.Uuid
+  uploadedByUserId String   @map("uploaded_by_user_id") @db.Uuid
+  fileName         String   @map("file_name") @db.VarChar(240)
+  mediaType        String   @map("media_type") @db.VarChar(120)
+  byteSize         BigInt   @map("byte_size")
+  objectKey        String   @map("object_key") @db.VarChar(500)
+  description      String?  @db.VarChar(1000)
+  status           String   @default("PENDING") @db.VarChar(20)
+  attempts         Int      @default(0)
+  nextAttemptAt    DateTime @default(now()) @map("next_attempt_at")
+  lockedAt         DateTime? @map("locked_at")
+  lastError        String?  @map("last_error") @db.VarChar(1000)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  @@unique([id, organizationId])
+  @@index([status, nextAttemptAt, createdAt])
+  @@index([organizationId, submissionId, createdAt])
+  @@map("evidence_scan_jobs")
+}
