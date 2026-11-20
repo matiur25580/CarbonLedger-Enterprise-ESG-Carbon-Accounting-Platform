@@ -49,6 +49,8 @@ jobs:
         run: corepack enable
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Create restricted application database role
         env:
           PGPASSWORD: postgres_dev
