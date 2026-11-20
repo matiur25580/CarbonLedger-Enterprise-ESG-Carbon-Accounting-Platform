@@ -12,11 +12,14 @@
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "db:generate": "pnpm --filter @carbonledger/api exec prisma generate",
-    "db:migrate": "pnpm --filter @carbonledger/api exec prisma migrate dev",
-    "db:studio": "pnpm --filter @carbonledger/api exec prisma studio",
+    "db:migrate": "dotenv -e .env -- pnpm --filter @carbonledger/api exec prisma migrate dev",
+    "db:studio": "dotenv -e .env -- pnpm --filter @carbonledger/api exec prisma studio",
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "pnpm -r --if-present lint",
     "test": "pnpm -r --if-present test",
     "build": "pnpm -r --if-present build"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^8.0.0"
   }
 }
