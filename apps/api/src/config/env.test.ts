@@ -31,6 +31,11 @@ describe("API environment schema", () => {
     assert.equal(result.success, false);
   });
 
+  it("requires secure cookies in production", () => {
+    const result = envSchema.safeParse({ ...validEnv, NODE_ENV: "production", COOKIE_SECURE: "false" });
+    assert.equal(result.success, false);
+  });
+
   it("rejects a weak JWT signing secret", () => {
     const result = envSchema.safeParse({ ...validEnv, JWT_ACCESS_SECRET: "short" });
     assert.equal(result.success, false);
