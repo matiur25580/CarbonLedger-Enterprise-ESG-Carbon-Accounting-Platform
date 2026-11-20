@@ -1,9 +1,9 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { Router } from "express";
 import { z } from "zod";
 import { AuthRequest, requireRole } from "../auth/auth.middleware.js";
 import { withTenantContext } from "../auth/tenant-context.js";
-import { createEvidenceDownloadUrl, createEvidenceUploadUrl, deleteEvidenceObject, inspectEvidenceObject, readEvidenceObject } from "./s3-evidence-storage.js";
+import { createEvidenceDownloadUrl, createEvidenceUploadUrl, deleteEvidenceObject, inspectEvidenceObject } from "./s3-evidence-storage.js";
 import { scanBufferWithClamAv } from "./clamav-scanner.js";
 
 export const evidenceVaultRouter = Router();
