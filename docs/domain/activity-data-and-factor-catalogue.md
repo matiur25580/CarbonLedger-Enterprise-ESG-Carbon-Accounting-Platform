@@ -17,7 +17,7 @@ Each activity record stores:
 
 Initial category/scope guardrails map purchased electricity to Scope 2; stationary/mobile fuel and refrigerants to Scope 1; and business travel, waste, water, purchased goods and freight to Scope 3. OTHER is intentionally flexible and requires organization methodology review. This is an intake guardrail, not a complete GHG Protocol classification engine.
 
-A contributor can submit their own DRAFT or REJECTED record. OWNER, ADMIN or AUDITOR can approve/reject a submitted record, but cannot review their own submission. A rejection can be corrected and resubmitted. Every create, submit and review action creates an audit event in the same transaction.
+A contributor can correct their own DRAFT or REJECTED record, then submit it. Corrections are validated against the effective existing category, scope and reporting period. A contributor can submit their own DRAFT or REJECTED record. OWNER, ADMIN or AUDITOR can approve/reject a submitted record, but cannot review their own submission. A rejection can be corrected and resubmitted. Every create, submit and review action creates an audit event in the same transaction.
 
 ## Emission-factor versions
 
@@ -44,6 +44,7 @@ All routes require a bearer access token:
 - GET/POST /api/v1/facilities
 - PATCH /api/v1/facilities/:facilityId/status
 - GET/POST /api/v1/activity-records
+- PATCH /api/v1/activity-records/:recordId
 - POST /api/v1/activity-records/:recordId/submit
 - POST /api/v1/activity-records/:recordId/review
 - GET/POST /api/v1/emission-factors
