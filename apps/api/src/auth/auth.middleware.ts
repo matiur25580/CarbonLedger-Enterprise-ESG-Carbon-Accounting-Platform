@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { prisma } from "../lib/prisma.js";
+import { withTenantContext } from "./tenant-context.js";
 import { verifyAccessToken } from "./tokens.js";
 
 export interface AuthRequest extends Request {
@@ -16,10 +16,12 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
   try {
     const claims = verifyAccessToken(header.slice(7));
-    const membership = await prisma.organizationMembership.findUnique({
-      where: { organizationId_userId: { organizationId: claims.organizationId, userId: claims.sub } },
-      include: { user: { select: { email: true, status: true } } }
-    });
+    const membership = await withTenantContext(claims.organizationId, (tx) =>
+      tx.organizationMembership.findUnique({
+        where: { organizationId_userId: { organizationId: claims.organizationId, userId: claims.sub } },
+        include: { user: { select: { email: true, status: true } } }
+      })
+    );
     if (!membership || membership.user.status !== "ACTIVE") {
       res.status(401).json({ error: { code: "MEMBERSHIP_INACTIVE", message: "This account has no active membership in the selected organization" } });
       return;
