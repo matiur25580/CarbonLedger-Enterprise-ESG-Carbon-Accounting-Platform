@@ -4,7 +4,11 @@ import express, { type ErrorRequestHandler } from "express";
 import helmet from "helmet";
 import { authRouter } from "./auth/auth.routes.js";
 import { organizationRouter } from "./organizations/organization.routes.js";
+import { facilityRouter } from "./facilities/facility.routes.js";
+import { activityRouter } from "./activities/activity.routes.js";
+import { emissionFactorRouter } from "./emission-factors/emission-factor.routes.js";
 import { env } from "./config/env.js";
+import { requireAuth } from "./auth/auth.middleware.js";
 import { prisma } from "./lib/prisma.js";
 
 export const app = express();
@@ -34,6 +38,9 @@ app.get("/api/v1/meta", (_req, res) => {
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/organizations", organizationRouter);
+app.use("/api/v1/facilities", requireAuth, facilityRouter);
+app.use("/api/v1/activity-records", requireAuth, activityRouter);
+app.use("/api/v1/emission-factors", requireAuth, emissionFactorRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ error: { code: "NOT_FOUND", message: "Route not found" } });
