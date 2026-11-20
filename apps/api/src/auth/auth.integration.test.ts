@@ -51,6 +51,19 @@ describe("identity and tenant isolation integration", () => {
     );
     assert.equal(hiddenOrganization, null);
 
+    const auditEvents = await withTenantContext(first.organization.id, (tx) =>
+      tx.auditLog.findMany({ where: { organizationId: first.organization.id } })
+    );
+    assert.ok(auditEvents.length > 0);
+    await assert.rejects(
+      withTenantContext(first.organization.id, (tx) =>
+        tx.auditLog.updateMany({
+          where: { organizationId: first.organization.id },
+          data: { action: "audit.tampered" }
+        })
+      )
+    );
+
     await withTenantContext(second.organization.id, (tx) =>
       tx.organizationMembership.create({
         data: { organizationId: second.organization.id, userId: first.user.id, role: "MEMBER" }
