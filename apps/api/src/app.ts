@@ -19,11 +19,13 @@ import { env } from "./config/env.js";
 import { requireAuth } from "./auth/auth.middleware.js";
 import { prisma } from "./lib/prisma.js";
 import { apiRateLimiter, calculationRateLimiter, importRateLimiter } from "./security/rate-limiters.js";
+import { requestContext } from "./observability/request-context.js";
 
 export const app = express();
 
 app.disable("x-powered-by");
 app.use(helmet());
+app.use(requestContext);
 app.use(cors({ origin: env.WEB_ORIGIN, credentials: true }));
 app.use(express.json({ limit: "2mb" }));
 app.use(cookieParser());
@@ -68,8 +70,13 @@ app.use((_req, res) => {
 });
 
 const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
-  console.error("Unhandled request error", error);
-  res.status(500).json({ error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" } });
+  console.error(JSON.stringify({
+    level: "error",
+    event: "http.request.failed",
+    requestId: res.locals.requestId ?? "unknown",
+    errorType: error instanceof Error ? error.name : "UnknownError"
+  }));
+  res.status(500).json({ error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" }, requestId: res.locals.requestId ?? null });
 };
 
 app.use(errorHandler);
