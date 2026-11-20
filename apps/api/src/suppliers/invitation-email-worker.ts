@@ -25,7 +25,7 @@ async function finish(job:Job,status:"SENT"|"PENDING"|"FAILED",data:{messageId?:
 }
 async function process(job:Job){
  try{const payload=decryptInvitationEmail({payloadCiphertext:job.payload_ciphertext,payloadIv:job.payload_iv,payloadAuthTag:job.payload_auth_tag});
-  const messageId=await sendInvitationEmail(payload);await finish(job,"SENT",{messageId});
+  const messageId=await sendInvitationEmail(payload,job.id);await finish(job,"SENT",{messageId});
   console.info("Supplier invitation email sent",{deliveryId:job.id,attempt:job.attempts});
  }catch(error){
   const message=error instanceof Error?error.message:"Unknown email delivery failure";
