@@ -51,4 +51,4 @@ All routes require a bearer access token:
 - POST /api/v1/emission-factors/:factorId/publish
 - POST /api/v1/emission-factors/:factorId/retire
 
-Pagination and CSV ingestion are intentionally deferred; current activity listing is capped at 100 records per request. Global authoritative factor datasets and licensing/attribution review are also future work.
+Activity listing supports cursor pagination (default 50, maximum 100) and overlap-aware reporting-period filters; CSV ingestion is deferred. Global authoritative factor datasets and licensing/attribution review are also future work.
