@@ -17,6 +17,20 @@ jobs:
   quality:
     name: Typecheck, lint, test and build
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: carbonledger
+          POSTGRES_USER: carbonledger
+          POSTGRES_PASSWORD: carbonledger_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U carbonledger -d carbonledger"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       NODE_ENV: test
       DATABASE_URL: postgresql://carbonledger:carbonledger_dev@localhost:5432/carbonledger
@@ -35,6 +49,8 @@ jobs:
         run: pnpm install --no-frozen-lockfile
       - name: Generate Prisma Client
         run: pnpm --filter @carbonledger/api exec prisma generate
+      - name: Apply database migrations
+        run: pnpm --filter @carbonledger/api exec prisma migrate deploy
       - name: Typecheck
         run: pnpm typecheck
       - name: Lint
