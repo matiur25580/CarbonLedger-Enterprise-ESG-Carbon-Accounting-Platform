@@ -88,7 +88,7 @@ authRouter.get("/organizations", requireAuth, async (req, res) => {
   res.status(200).json({ organizations: await listUserOrganizations(auth.userId) });
 });
 
-authRouter.post("/switch-organization", requireAuth, async (req, res) => {
+authRouter.post("/switch-organization", requireTrustedOrigin, requireAuth, async (req, res) => {
   const parsed = switchOrganizationSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "Organization ID must be a UUID" } });
