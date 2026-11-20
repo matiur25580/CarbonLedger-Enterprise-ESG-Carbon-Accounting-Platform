@@ -6,7 +6,8 @@ const validEnv = {
   NODE_ENV: "test",
   API_PORT: "4100",
   WEB_ORIGIN: "http://localhost:5173",
-  DATABASE_URL: "postgresql://user:pass@localhost:5432/carbonledger",
+  DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/carbonledger",
+  APP_DATABASE_URL: "postgresql://carbonledger_app:app@localhost:5432/carbonledger",
   JWT_ACCESS_SECRET: "test-only-signing-secret-with-more-than-32-characters",
   COOKIE_SECURE: "false"
 };
@@ -27,7 +28,7 @@ describe("API environment schema", () => {
   });
 
   it("rejects a missing database URL", () => {
-    const result = envSchema.safeParse({ ...validEnv, DATABASE_URL: undefined });
+    const result = envSchema.safeParse({ ...validEnv, APP_DATABASE_URL: undefined });
     assert.equal(result.success, false);
   });
 
