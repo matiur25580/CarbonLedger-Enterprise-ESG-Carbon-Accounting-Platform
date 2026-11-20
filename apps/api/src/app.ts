@@ -1,6 +1,9 @@
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { type ErrorRequestHandler } from "express";
 import helmet from "helmet";
+import { authRouter } from "./auth/auth.routes.js";
+import { organizationRouter } from "./organizations/organization.routes.js";
 import { env } from "./config/env.js";
 import { prisma } from "./lib/prisma.js";
 
@@ -10,6 +13,7 @@ app.disable("x-powered-by");
 app.use(helmet());
 app.use(cors({ origin: env.WEB_ORIGIN, credentials: true }));
 app.use(express.json({ limit: "1mb" }));
+app.use(cookieParser());
 
 app.get("/api/v1/health/live", (_req, res) => {
   res.status(200).json({ status: "ok", service: "carbonledger-api" });
@@ -25,12 +29,11 @@ app.get("/api/v1/health/ready", async (_req, res) => {
 });
 
 app.get("/api/v1/meta", (_req, res) => {
-  res.status(200).json({
-    name: "CarbonLedger API",
-    version: "v1",
-    environment: env.NODE_ENV
-  });
+  res.status(200).json({ name: "CarbonLedger API", version: "v1", environment: env.NODE_ENV });
 });
+
+app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/organizations", organizationRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ error: { code: "NOT_FOUND", message: "Route not found" } });
