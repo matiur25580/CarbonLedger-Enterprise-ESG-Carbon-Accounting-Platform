@@ -6,7 +6,7 @@ Measure emissions. Govern sustainability data. Track reduction initiatives. Prod
 
 CarbonLedger is an enterprise software project built with the **PERN stack**: PostgreSQL, Express.js, React.js and Node.js. It is designed to help organizations collect activity data, calculate greenhouse-gas (GHG) emissions, manage suppliers and evidence, monitor reduction targets, and prepare structured sustainability disclosures.
 
-> **Project status:** Phase 7 supplier evidence metadata and append-only review decisions implemented on top of the Phase 6 supplier portal.
+> **Project status:** Phase 8 reduction targets, initiatives and immutable scenario snapshots implemented on top of the supplier evidence and review workflows.
 
 ## Product goals
 
@@ -152,9 +152,20 @@ External supplier endpoints are unauthenticated by organization credentials but 
 - GET `/api/v1/suppliers/portal/:token` — retrieve the supplier's questionnaire.
 - POST `/api/v1/suppliers/portal/:token/submit` — validate and submit answers once.
 
-Invitation tokens are stored only as SHA-256 hashes, bind supplier/questionnaire/tenant identifiers, expire after seven days, and are single-use. The API returns the token once; delivery is not automated yet (`deliveryStatus: NOT_SENT`). Submission answers are immutable and tenant-scoped. The API returns the token once; delivery is not automated yet (`deliveryStatus: NOT_SENT`). See `docs/domain/supplier-portal.md`.
+Invitation tokens are stored only as SHA-256 hashes, bind supplier/questionnaire/tenant identifiers, expire after seven days, and are single-use. The API returns the token once; delivery is not automated yet (`deliveryStatus: NOT_SENT`). Submission answers are immutable and tenant-scoped. See `docs/domain/supplier-portal.md`.
 
-## Supplier evidence and review workflow (Phase 7)\n\n- POST `/api/v1/suppliers/submissions/:submissionId/evidence` — register evidence object metadata (OWNER/ADMIN/MEMBER/AUDITOR).\n- GET `/api/v1/suppliers/submissions/:submissionId/evidence` — list evidence metadata.\n- POST `/api/v1/suppliers/submissions/:submissionId/reviews` — append an APPROVED, REJECTED or NEEDS_CHANGES decision (OWNER/ADMIN/AUDITOR).\n- GET `/api/v1/suppliers/submissions/:submissionId/reviews` — retrieve the ordered review history.\n\nEvidence metadata records file name, media type, byte size (maximum 50 MiB), SHA-256, storage provider and opaque object key. Binary upload, malware scanning and download delivery are **not** implemented; connect trusted object storage before treating evidence as present or safe. Evidence and review events are tenant-isolated and database-append-only. Each action is audited. See `docs/domain/supplier-evidence-and-reviews.md`.\n\n## Engineering commands
+## Supplier evidence and review workflow (Phase 7)\n\n- POST `/api/v1/suppliers/submissions/:submissionId/evidence` — register evidence object metadata (OWNER/ADMIN/MEMBER/AUDITOR).\n- GET `/api/v1/suppliers/submissions/:submissionId/evidence` — list evidence metadata.\n- POST `/api/v1/suppliers/submissions/:submissionId/reviews` — append an APPROVED, REJECTED or NEEDS_CHANGES decision (OWNER/ADMIN/AUDITOR).\n- GET `/api/v1/suppliers/submissions/:submissionId/reviews` — retrieve the ordered review history.\n\nEvidence metadata records file name, media type, byte size (maximum 50 MiB), SHA-256, storage provider and opaque object key. Binary upload, malware scanning and download delivery are **not** implemented; connect trusted object storage before treating evidence as present or safe. Evidence and review events are tenant-isolated and database-append-only. Each action is audited. See `docs/domain/supplier-evidence-and-reviews.md`.\n\n## Reduction targets, initiatives and scenario analysis (Phase 8)
+
+- POST `/api/v1/reductions/targets` — OWNER/ADMIN create a Scope 1/2/3 target with baseline year, target year, baseline kg CO2e and reduction percentage.
+- GET `/api/v1/reductions/targets?limit=50` — list targets with initiatives and recent scenarios.
+- POST `/api/v1/reductions/targets/:targetId/initiatives` — OWNER/ADMIN/MEMBER add an initiative with expected annual reduction.
+- PATCH `/api/v1/reductions/initiatives/:initiativeId/status` — update initiative status.
+- POST `/api/v1/reductions/targets/:targetId/scenarios` — create an immutable planning scenario snapshot.
+- GET `/api/v1/reductions/targets/:targetId/scenarios` — list scenario snapshots.
+
+Scenario analysis sums expected reductions from PLANNED, IN_PROGRESS and COMPLETED initiatives, then calculates projected emissions against the target threshold using Decimal arithmetic. These are planning estimates; baseline values are manually supplied and are not yet derived from historical calculation runs or verified measured reductions. See `docs/domain/reduction-targets-and-scenarios.md`.
+
+## Engineering commands
 
 - `pnpm typecheck` — TypeScript checks across workspaces
 - `pnpm lint` — current static quality checks
@@ -181,7 +192,7 @@ Invitation tokens are stored only as SHA-256 hashes, bind supplier/questionnaire
 - [x] Phase 5 — ESG data collection, imports and data-quality workflows
 - [x] Phase 6 — Supplier sustainability portal
 - [x] Phase 7 — Evidence metadata and supplier review decisions
-- [ ] Phase 8 — Targets, initiatives and scenario analysis
+- [x] Phase 8 — Targets, initiatives and scenario analysis
 - [ ] Phase 9 — Analytics and reporting
 - [ ] Phase 10 — Integrations, webhooks and background processing
 - [ ] Phase 11 — Security, performance, accessibility and production delivery
