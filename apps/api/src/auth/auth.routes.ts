@@ -1,13 +1,16 @@
 import { Router } from "express";
+import { rateLimit } from "express-rate-limit";
 import { prisma } from "../lib/prisma.js";
 import { AuthRequest, requireAuth } from "./auth.middleware.js";
 import { clearRefreshCookie, REFRESH_COOKIE, setRefreshCookie } from "./cookies.js";
+import { requireTrustedOrigin } from "./cookie-origin.middleware.js";
 import { loginSchema, registerSchema, switchOrganizationSchema } from "./auth.schemas.js";
 import { getCurrentOrganization, listUserOrganizations, login, register, revokeRefreshToken, rotateRefreshToken, switchOrganization } from "./auth.service.js";
 
 export const authRouter = Router();
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: "draft-8", legacyHeaders: false });
 
-authRouter.post("/register", async (req, res) => {
+authRouter.post("/register", authLimiter, async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "Registration details are invalid", details: parsed.error.flatten() } });
@@ -32,7 +35,7 @@ authRouter.post("/register", async (req, res) => {
   }
 });
 
-authRouter.post("/login", async (req, res) => {
+authRouter.post("/login", authLimiter, async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "Login details are invalid" } });
@@ -48,7 +51,7 @@ authRouter.post("/login", async (req, res) => {
   }
 });
 
-authRouter.post("/refresh", async (req, res) => {
+authRouter.post("/refresh", requireTrustedOrigin, authLimiter, async (req, res) => {
   const token = req.cookies?.[REFRESH_COOKIE] as string | undefined;
   if (!token) {
     res.status(401).json({ error: { code: "REFRESH_REQUIRED", message: "Refresh session is missing" } });
@@ -64,7 +67,7 @@ authRouter.post("/refresh", async (req, res) => {
   }
 });
 
-authRouter.post("/logout", async (req, res) => {
+authRouter.post("/logout", requireTrustedOrigin, async (req, res) => {
   const token = req.cookies?.[REFRESH_COOKIE] as string | undefined;
   if (token) await revokeRefreshToken(token);
   clearRefreshCookie(res);
