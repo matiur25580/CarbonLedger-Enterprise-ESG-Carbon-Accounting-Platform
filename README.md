@@ -154,7 +154,16 @@ External supplier endpoints are unauthenticated by organization credentials but 
 
 Invitation tokens are stored only as SHA-256 hashes, bind supplier/questionnaire/tenant identifiers, expire after seven days, and are single-use. The API returns the token once; delivery is not automated yet (`deliveryStatus: NOT_SENT`). Submission answers are immutable and tenant-scoped. See `docs/domain/supplier-portal.md`.
 
-## Supplier evidence and review workflow (Phase 7)\n\n- POST `/api/v1/suppliers/submissions/:submissionId/evidence` — register evidence object metadata (OWNER/ADMIN/MEMBER/AUDITOR).\n- GET `/api/v1/suppliers/submissions/:submissionId/evidence` — list evidence metadata.\n- POST `/api/v1/suppliers/submissions/:submissionId/reviews` — append an APPROVED, REJECTED or NEEDS_CHANGES decision (OWNER/ADMIN/AUDITOR).\n- GET `/api/v1/suppliers/submissions/:submissionId/reviews` — retrieve the ordered review history.\n\nEvidence metadata records file name, media type, byte size (maximum 50 MiB), SHA-256, storage provider and opaque object key. Binary upload, malware scanning and download delivery are **not** implemented; connect trusted object storage before treating evidence as present or safe. Evidence and review events are tenant-isolated and database-append-only. Each action is audited. See `docs/domain/supplier-evidence-and-reviews.md`.\n\n## Reduction targets, initiatives and scenario analysis (Phase 8)
+## Supplier evidence and review workflow (Phase 7)
+
+- POST `/api/v1/suppliers/submissions/:submissionId/evidence` — register evidence object metadata (OWNER/ADMIN/MEMBER/AUDITOR).
+- GET `/api/v1/suppliers/submissions/:submissionId/evidence` — list evidence metadata.
+- POST `/api/v1/suppliers/submissions/:submissionId/reviews` — append an APPROVED, REJECTED or NEEDS_CHANGES decision (OWNER/ADMIN/AUDITOR).
+- GET `/api/v1/suppliers/submissions/:submissionId/reviews` — retrieve the ordered review history.
+
+Evidence metadata records file name, media type, byte size (maximum 50 MiB), SHA-256, storage provider and opaque object key. Binary upload, malware scanning and download delivery are **not** implemented; connect trusted object storage before treating evidence as present or safe. Evidence and review events are tenant-isolated and database-append-only. Each action is audited. See `docs/domain/supplier-evidence-and-reviews.md`.
+
+## Reduction targets, initiatives and scenario analysis (Phase 8)
 
 - POST `/api/v1/reductions/targets` — OWNER/ADMIN create a Scope 1/2/3 target with baseline year, target year, baseline kg CO2e and reduction percentage.
 - GET `/api/v1/reductions/targets?limit=50` — list targets with initiatives and recent scenarios.
@@ -183,7 +192,14 @@ Supplier questionnaire submissions enqueue `supplier.submission.created` deliver
 
 **Delivery worker:** a separate runnable worker now claims outbox rows with `FOR UPDATE SKIP LOCKED`, performs HTTPS delivery with DNS/IP validation and pinned connections, signs requests with HMAC-SHA256, and retries with bounded exponential backoff. Run `pnpm --filter @carbonledger/api dev:worker` locally or `pnpm --filter @carbonledger/api worker` after building. The worker is not yet provisioned as a hosted service. Delivery is at-least-once; receivers must deduplicate by event ID. See `docs/domain/webhook-delivery-worker.md`.
 
-## Enterprise audit and compliance center (Phase 11)\n\n- GET `/api/v1/audit/events` — paginated, tenant-scoped audit history for OWNER/ADMIN/AUDITOR, with actor, action, resource, date and event filters.\n- GET `/api/v1/audit/export.csv?from=YYYY-MM-DD&to=YYYY-MM-DD` — bounded chronological CSV export with actor identity and recorded metadata.\n\nExports include an `X-Content-SHA256` digest over the exact CSV bytes, a record count and organization identifier; spreadsheet formula-leading values are neutralized. The digest verifies the downloaded export against its supplied checksum; it is not a persisted hash chain or independent assurance. Audit access remains tenant-scoped and application audit rows are append-only. See `docs/domain/audit-and-compliance-center.md`.\n\n## Engineering commands
+## Enterprise audit and compliance center (Phase 11)
+
+- GET `/api/v1/audit/events` — paginated, tenant-scoped audit history for OWNER/ADMIN/AUDITOR, with actor, action, resource, date and event filters.
+- GET `/api/v1/audit/export.csv?from=YYYY-MM-DD&to=YYYY-MM-DD` — bounded chronological CSV export with actor identity and recorded metadata.
+
+Exports include an `X-Content-SHA256` digest over the exact CSV bytes, a record count and organization identifier; spreadsheet formula-leading values are neutralized. The digest verifies the downloaded export against its supplied checksum; it is not a persisted hash chain or independent assurance. Audit access remains tenant-scoped and application audit rows are append-only. See `docs/domain/audit-and-compliance-center.md`.
+
+## Engineering commands
 
 - `pnpm typecheck` — TypeScript checks across workspaces
 - `pnpm lint` — current static quality checks
@@ -212,8 +228,9 @@ Supplier questionnaire submissions enqueue `supplier.submission.created` deliver
 - [x] Phase 7 — Evidence metadata and supplier review decisions
 - [x] Phase 8 — Targets, initiatives and scenario analysis
 - [x] Phase 9 — Analytics and reporting
-- [ ] Phase 10 — Integrations, webhooks and background processing
-- [ ] Phase 11 — Security, performance, accessibility and production delivery
+- [x] Phase 10 — Integrations, webhooks and background processing (worker code; hosted deployment is manual)
+- [x] Phase 11 — Compliance audit center and verifiable exports
+- [ ] Phase 12 — Security, performance, accessibility and production hardening
 
 See `docs/product/mvp-scope.md` and `docs/architecture/system-design.md`.
 
