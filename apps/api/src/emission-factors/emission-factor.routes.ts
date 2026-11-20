@@ -8,7 +8,7 @@ export const emissionFactorRouter = Router();
 
 const categories = ["ELECTRICITY","NATURAL_GAS","DIESEL","PETROL","LPG","REFRIGERANTS","COMPANY_VEHICLES","BUSINESS_TRAVEL","WASTE","WATER","PURCHASED_GOODS","FREIGHT","OTHER"] as const;
 const scopes = ["SCOPE_1","SCOPE_2","SCOPE_3"] as const;
-const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => !Number.isNaN(Date.parse(value)));
+const dateString = z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).refine((value) => { const parsed = new Date(value); return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value; });
 const createFactorSchema = z.object({
   code: z.string().trim().min(2).max(80).regex(/^[A-Za-z0-9._-]+$/),
   name: z.string().trim().min(2).max(180),
