@@ -444,10 +444,30 @@ model SupplierEvidence {
   organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   submission         SupplierSubmission @relation(fields: [submissionId, organizationId], references: [id, organizationId], onDelete: Restrict)
   uploadedBy         User @relation("SupplierEvidenceUploader", fields: [uploadedByUserId], references: [id], onDelete: Restrict)
+  reviews            SupplierEvidenceReview[]
   @@unique([id, organizationId])
   @@unique([organizationId, storageProvider, objectKey])
   @@index([organizationId, submissionId, createdAt])
   @@map("supplier_evidence")
+}
+
+
+model SupplierEvidenceReview {
+  id               String @id @default(uuid()) @db.Uuid
+  organizationId   String @map("organization_id") @db.Uuid
+  evidenceId       String @map("evidence_id") @db.Uuid
+  submissionId     String @map("submission_id") @db.Uuid
+  reviewerUserId   String @map("reviewer_user_id") @db.Uuid
+  decision         SupplierReviewDecision
+  comment          String? @db.VarChar(2000)
+  createdAt        DateTime @default(now()) @map("created_at")
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  evidence         SupplierEvidence @relation(fields: [evidenceId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  reviewer         User @relation("SupplierEvidenceReviewer", fields: [reviewerUserId], references: [id], onDelete: Restrict)
+  @@unique([id, organizationId])
+  @@index([organizationId, evidenceId, createdAt])
+  @@index([organizationId, submissionId, createdAt])
+  @@map("supplier_evidence_reviews")
 }
 
 model SupplierSubmissionReview {
