@@ -17,6 +17,20 @@ Returns:
 
 The date range is inclusive and applies to activity period start. The response is limited to the first 10,000 calculation results and reports `truncated: true` when more rows match. Values are calculated from immutable calculation-result snapshots; they are not a substitute for a formal assurance statement.
 
+## Data quality intelligence
+
+`GET /api/v1/analytics/data-quality?from=YYYY-MM-DD&to=YYYY-MM-DD[&facilityId=<uuid>]`
+
+Returns an organization-scoped data quality score (0–100), number of records analyzed, records with issues, issue counts and actionable activity-record references. The analysis checks:
+- Exact activity fingerprints that may represent duplicate submissions (high severity; verify manually).
+- Missing source references.
+- Draft records not submitted for at least 30 days.
+- Submitted records awaiting review for at least 14 days.
+- Approved records without a linked calculation result.
+- Statistical quantity outliers within category-and-unit groups using a 3×IQR rule; groups smaller than eight records are excluded.
+
+The endpoint analyzes at most 5,000 records and returns `truncated: true` when more records match. Outlier and duplicate findings are investigation signals, not automatic proof of incorrect data. The quality score is a transparent heuristic with fixed issue penalties, not a formal audit opinion, assurance rating, or GHG Protocol conformity assessment. A missing source reference does not prove that evidence does not exist outside the platform.
+ 
 ## CSV export
 
 `GET /api/v1/analytics/emissions.csv?from=YYYY-MM-DD&to=YYYY-MM-DD[&facilityId=<uuid>]`
