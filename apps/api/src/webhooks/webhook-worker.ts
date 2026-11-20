@@ -60,7 +60,7 @@ async function claimForOrganization(organizationId: string): Promise<ClaimedDeli
   });
 }
 
-async function finishDelivery(delivery: ClaimedDelivery, outcome: { statusCode?: number; error?: string }) {
+async function finishDelivery(delivery: ClaimedDelivery, outcome: { statusCode?: number; error?: string; permanentFailure?: boolean }) {
   await withTenantContext(delivery.organization_id, async (tx) => {
     if (outcome.statusCode !== undefined) {
       await tx.webhookDelivery.updateMany({
@@ -69,7 +69,8 @@ async function finishDelivery(delivery: ClaimedDelivery, outcome: { statusCode?:
       });
       return;
     }
-    const exhausted = delivery.attempts >= webhookWorkerLimits.maxAttempts;
+    const retryable = outcome.statusCode === undefined || outcome.statusCode === 408 || outcome.statusCode === 425 || outcome.statusCode === 429 || outcome.statusCode >= 500;
+    const exhausted = delivery.attempts >= webhookWorkerLimits.maxAttempts || outcome.permanentFailure === true || !retryable;
     const delay = retryDelayMs(delivery.attempts);
     await tx.webhookDelivery.updateMany({
       where: { id: delivery.id, organizationId: delivery.organization_id, status: "PROCESSING", lockedAt: delivery.locked_at },
@@ -86,7 +87,7 @@ async function finishDelivery(delivery: ClaimedDelivery, outcome: { statusCode?:
 
 async function processDelivery(delivery: ClaimedDelivery): Promise<void> {
   if (!delivery.endpoint_enabled) {
-    await finishDelivery(delivery, { error: "Webhook endpoint is disabled" });
+    await finishDelivery(delivery, { error: "Webhook endpoint is disabled", permanentFailure: true });
     return;
   }
   try {
