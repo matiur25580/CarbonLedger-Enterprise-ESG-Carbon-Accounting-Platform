@@ -280,7 +280,7 @@ Deployment is intentionally left to the repository owner. Before manually deploy
 - Scope 3 coverage depends on configured categories and available supplier/activity data.
 - The evidence vault requires private S3-compatible storage and a reachable ClamAV daemon. The PostgreSQL-backed scan worker uses retries and lease recovery; each active scan buffers at most 50 MiB.
 - Supplier invitation email delivery uses an encrypted PostgreSQL queue and Resend when configured; delivery status is provider-acceptance status, not proof of inbox delivery. Without provider credentials, the existing manual-link fallback remains available.
-- Activity and supplier submission lists have current first-page limits and need cursor pagination for larger tenants.
+- Activity records and supplier submissions now use cursor pagination in the dashboard; supplier directory search/filtering and pagination remain future improvements.
 - Reduction baselines are manually supplied; scenario projections are estimates, not verified realized reductions.
 - Data-quality scoring is heuristic and advisory, not a formal assurance opinion.
 - Audit CSV SHA-256 is a file-integrity digest, not a tamper-evident hash chain or third-party timestamp.
