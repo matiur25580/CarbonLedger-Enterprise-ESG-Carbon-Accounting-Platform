@@ -91,8 +91,15 @@ authRouter.post("/switch-organization", requireAuth, async (req, res) => {
     res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "Organization ID must be a UUID" } });
     return;
   }
+  const refreshToken = req.cookies?.[REFRESH_COOKIE] as string | undefined;
+  if (!refreshToken) {
+    res.status(401).json({ error: { code: "REFRESH_REQUIRED", message: "Refresh session is required to switch organizations" } });
+    return;
+  }
   try {
-    res.status(200).json(await switchOrganization((req as AuthRequest).auth!.userId, parsed.data.organizationId));
+    const result = await switchOrganization((req as AuthRequest).auth!.userId, parsed.data.organizationId, refreshToken);
+    setRefreshCookie(res, result.refreshToken);
+    res.status(200).json({ organization: result.organization, accessToken: result.accessToken });
   } catch {
     res.status(403).json({ error: { code: "ORGANIZATION_ACCESS_DENIED", message: "You are not a member of this organization" } });
   }
