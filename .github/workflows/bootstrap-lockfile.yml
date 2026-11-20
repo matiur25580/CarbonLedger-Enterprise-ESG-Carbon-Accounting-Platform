@@ -1,0 +1,95 @@
+name: Bootstrap pnpm lockfile
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lockfile-bootstrap-main
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    name: Generate, verify and commit dependency lockfile
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: carbonledger
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d carbonledger"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_ADMIN_URL: postgresql://postgres:postgres_dev@localhost:5432/carbonledger
+      DATABASE_URL: postgresql://carbonledger_migrator:carbonledger_migrator_dev@localhost:5432/carbonledger
+      APP_DATABASE_URL: postgresql://carbonledger_app:carbonledger_app_dev@localhost:5432/carbonledger
+      JWT_ACCESS_SECRET: ci-only-test-signing-secret-do-not-use-in-production
+      COOKIE_SECURE: "false"
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          persist-credentials: true
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Enable pnpm
+        run: corepack enable
+      - name: Generate lockfile without running package lifecycle scripts
+        run: pnpm install --lockfile-only --ignore-scripts
+      - name: Verify frozen installation
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Create restricted application database role
+        env:
+          PGPASSWORD: postgres_dev
+        run: psql -h localhost -U postgres -d carbonledger -v ON_ERROR_STOP=1 -f infra/postgres/init/01-application-role.sql
+      - name: Generate Prisma Client
+        run: pnpm --filter @carbonledger/api exec prisma generate
+      - name: Apply database migrations
+        run: pnpm --filter @carbonledger/api exec prisma migrate deploy
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Lint
+        run: pnpm lint
+      - name: Test
+        run: pnpm test
+      - name: Build
+        run: pnpm build
+      - name: Switch regular CI to frozen installation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path(".github/workflows/ci.yml")
+          content = path.read_text()
+          old = "run: pnpm install --no-frozen-lockfile"
+          new = "run: pnpm install --frozen-lockfile"
+          if content.count(old) != 1:
+              raise SystemExit("Expected exactly one non-frozen install command in ci.yml; refusing to modify it.")
+          path.write_text(content.replace(old, new))
+          PY
+      - name: Commit verified lockfile and frozen CI
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pnpm-lock.yaml .github/workflows/ci.yml
+          if git diff --cached --quiet; then
+            echo "No lockfile or CI changes to commit."
+            exit 0
+          fi
+          git commit -m "build(deps): add verified pnpm lockfile and frozen CI install"
+          git push origin HEAD:main
