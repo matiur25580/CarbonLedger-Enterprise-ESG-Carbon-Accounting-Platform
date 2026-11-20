@@ -181,7 +181,7 @@ Reports are based on immutable calculation snapshots and clearly distinguish sup
 
 Supplier questionnaire submissions enqueue `supplier.submission.created` deliveries in the same database transaction as the submission and audit record. Secrets are AES-256-GCM encrypted at rest; configure `WEBHOOK_ENCRYPTION_KEY` using a 32-byte hex key (for example, `openssl rand -hex 32`). Endpoint creation rejects obvious local/private destinations, but complete DNS/IP pinning and egress controls are required before outbound delivery.
 
-**Current boundary:** this increment persists and exposes the outbox; the background delivery worker, retries, HMAC request signing and verified outbound delivery are not yet deployed. PENDING means queued, not delivered. See `docs/domain/webhooks-and-event-outbox.md`.
+**Delivery worker:** a separate runnable worker now claims outbox rows with `FOR UPDATE SKIP LOCKED`, performs HTTPS delivery with DNS/IP validation and pinned connections, signs requests with HMAC-SHA256, and retries with bounded exponential backoff. Run `pnpm --filter @carbonledger/api dev:worker` locally or `pnpm --filter @carbonledger/api worker` after building. The worker is not yet provisioned as a hosted service. Delivery is at-least-once; receivers must deduplicate by event ID. See `docs/domain/webhook-delivery-worker.md`.
 
 ## Engineering commands
 
