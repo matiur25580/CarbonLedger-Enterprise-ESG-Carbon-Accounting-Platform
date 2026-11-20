@@ -67,6 +67,12 @@ enum SupplierSubmissionStatus {
   SUBMITTED
 }
 
+enum SupplierReviewDecision {
+  APPROVED
+  REJECTED
+  NEEDS_CHANGES
+}
+
 model User {
   id            String                   @id @default(uuid()) @db.Uuid
   name          String                   @db.VarChar(100)
@@ -84,6 +90,8 @@ model User {
   calculationRunsCreated CalculationRun[] @relation("CalculationCreator")
   factorsCreated EmissionFactor[]        @relation("FactorCreator")
   activityImports ActivityImportBatch[]  @relation("ActivityImportCreator")
+  supplierReviews SupplierSubmissionReview[] @relation("SupplierSubmissionReviewer")
+  supplierEvidenceUploads SupplierEvidence[] @relation("SupplierEvidenceUploader")
 
   @@map("users")
 }
@@ -107,6 +115,8 @@ model Organization {
   supplierQuestionnaires SupplierQuestionnaire[]
   supplierInvitations SupplierInvitation[]
   supplierSubmissions SupplierSubmission[]
+  supplierEvidence SupplierEvidence[]
+  supplierSubmissionReviews SupplierSubmissionReview[]
 
   @@map("organizations")
 }
@@ -308,6 +318,8 @@ model SupplierSubmission {
   supplier        Supplier                 @relation(fields: [supplierId, organizationId], references: [id, organizationId], onDelete: Restrict)
   questionnaire   SupplierQuestionnaire    @relation(fields: [questionnaireId, organizationId], references: [id, organizationId], onDelete: Restrict)
   invitation      SupplierInvitation       @relation(fields: [invitationId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  evidence         SupplierEvidence[]
+  reviews          SupplierSubmissionReview[]
   @@unique([id, organizationId])
   @@index([organizationId, supplierId, submittedAt])
   @@map("supplier_submissions")
@@ -390,4 +402,43 @@ model CalculationResult {
   @@unique([calculationRunId, activityRecordId])
   @@index([organizationId, activityRecordId, createdAt])
   @@map("calculation_results")
+}
+
+
+model SupplierEvidence {
+  id                 String   @id @default(uuid()) @db.Uuid
+  organizationId     String   @map("organization_id") @db.Uuid
+  submissionId       String   @map("submission_id") @db.Uuid
+  uploadedByUserId   String   @map("uploaded_by_user_id") @db.Uuid
+  fileName           String   @map("file_name") @db.VarChar(240)
+  mediaType          String   @map("media_type") @db.VarChar(120)
+  byteSize           BigInt   @map("byte_size")
+  sha256             String   @db.Char(64)
+  storageProvider    String   @map("storage_provider") @db.VarChar(40)
+  objectKey          String   @map("object_key") @db.VarChar(500)
+  description        String?  @db.VarChar(1000)
+  createdAt          DateTime @default(now()) @map("created_at")
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  submission         SupplierSubmission @relation(fields: [submissionId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  uploadedBy         User @relation("SupplierEvidenceUploader", fields: [uploadedByUserId], references: [id], onDelete: Restrict)
+  @@unique([id, organizationId])
+  @@unique([organizationId, storageProvider, objectKey])
+  @@index([organizationId, submissionId, createdAt])
+  @@map("supplier_evidence")
+}
+
+model SupplierSubmissionReview {
+  id               String @id @default(uuid()) @db.Uuid
+  organizationId   String @map("organization_id") @db.Uuid
+  submissionId     String @map("submission_id") @db.Uuid
+  reviewerUserId   String @map("reviewer_user_id") @db.Uuid
+  decision         SupplierReviewDecision
+  comment          String? @db.VarChar(2000)
+  createdAt        DateTime @default(now()) @map("created_at")
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  submission       SupplierSubmission @relation(fields: [submissionId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  reviewer         User @relation("SupplierSubmissionReviewer", fields: [reviewerUserId], references: [id], onDelete: Restrict)
+  @@unique([id, organizationId])
+  @@index([organizationId, submissionId, createdAt])
+  @@map("supplier_submission_reviews")
 }
