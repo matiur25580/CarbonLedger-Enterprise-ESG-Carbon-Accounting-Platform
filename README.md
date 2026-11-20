@@ -266,7 +266,7 @@ Recent hardening also adds request correlation IDs and privacy-conscious structu
 Deployment is intentionally left to the repository owner. Before manually deploying, complete every relevant item in **[the pre-deployment readiness checklist](docs/operations/pre-deployment-readiness.md)**, including:
 
 - Run the [lockfile bootstrap workflow](https://github.com/matiur25580/CarbonLedger-Enterprise-ESG-Carbon-Accounting-Platform/actions/workflows/bootstrap-lockfile.yml); confirm it commits `pnpm-lock.yaml` and switches CI to `pnpm install --frozen-lockfile`.
-- Configure a shared rate-limit store before running multiple API replicas.
+- Apply the shared rate-limit migration and set `RATE_LIMIT_STORE=postgres` on every API replica before horizontal scaling.
 - Set production secrets, TLS, proxy trust, CORS and restricted database roles.
 - Configure backups and complete a restore rehearsal.
 - Provide private object storage, malware scanning and secure evidence delivery.
@@ -284,7 +284,7 @@ Deployment is intentionally left to the repository owner. Before manually deploy
 - Reduction baselines are manually supplied; scenario projections are estimates, not verified realized reductions.
 - Data-quality scoring is heuristic and advisory, not a formal assurance opinion.
 - Audit CSV SHA-256 is a file-integrity digest, not a tamper-evident hash chain or third-party timestamp.
-- API rate limits currently use process-local memory; use a shared store before horizontal scaling.
+- API rate limits support process-local memory or a shared PostgreSQL counter store; configure `RATE_LIMIT_STORE=postgres` on every API replica after applying the shared-store migration.
 - Centralized metrics, tracing, alerting, lockfile-based reproducibility and independent penetration testing remain release gates.
 
 ## Roadmap
@@ -303,7 +303,8 @@ Deployment is intentionally left to the repository owner. Before manually deploy
 - [x] Data-quality intelligence workspace
 - [x] Request correlation IDs and structured HTTP logs
 - [ ] Lockfile and frozen CI installation
-- [ ] Shared rate-limit storage and production observability integrations
+- [x] Shared PostgreSQL rate-limit store implementation (migration and production configuration still required)
+- [ ] Production observability integrations
 - [ ] Evidence object storage, scanning and supplier email delivery
 - [ ] Independent security review and deployment validation
 
