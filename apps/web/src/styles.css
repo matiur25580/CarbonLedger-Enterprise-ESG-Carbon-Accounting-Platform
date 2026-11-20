@@ -72,3 +72,60 @@
 .calculation-result small{color:#81907f;font-size:9px}
 @media(max-width:1000px){.workspace-columns{grid-template-columns:1fr}.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.form-grid{grid-template-columns:1fr}.form-grid .span-two{grid-column:auto}.form-actions{align-items:flex-start;flex-direction:column}.form-actions .primary-button{width:100%}.record-tools{flex-wrap:wrap}.workspace-table{min-width:760px}.preview-stats{grid-template-columns:repeat(2,1fr)}.import-controls{align-items:stretch}.import-controls>*{flex:1}.compact-button{min-width:110px}.facility-create{padding:14px}}
+
+
+.supplier-review-grid{display:grid;grid-template-columns:minmax(260px,.85fr) minmax(0,1.15fr);gap:15px;margin:16px 0}
+.supplier-metrics{margin-top:4px}
+.supplier-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+.one-column{grid-template-columns:1fr}
+.question-builder{display:grid;gap:8px;margin-top:15px}
+.question-editor{display:grid;grid-template-columns:minmax(0,1fr) 100px auto auto;align-items:end;gap:8px;padding:10px;border:1px solid #edf1ec;border-radius:7px;background:#fbfcfa}
+.question-editor label,.review-form label,.evidence-form label{display:grid;gap:6px;color:#63766a;font-size:10px;font-weight:650}
+.question-editor input:not([type=checkbox]),.question-editor select,.review-form select,.review-form textarea,.evidence-form input{width:100%;min-width:0;min-height:35px;padding:7px 9px;border:1px solid #dfe7df;border-radius:6px;background:#fff;color:#34483b;font:10px "DM Sans",sans-serif}
+.question-editor .required-toggle{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.question-editor .required-toggle input{accent-color:#42764c}
+.invitation-result{display:grid;gap:8px;margin-top:15px;padding:13px;border:1px solid #dcebd7;border-radius:8px;background:#f5faf2}
+.invitation-result>b{color:#365f3b;font-size:12px}
+.invitation-result>small{color:#788a7b;font-size:9px;line-height:1.5}
+.invitation-result>div{display:flex;gap:8px}
+.invitation-result input{flex:1;min-width:0;padding:8px;border:1px solid #dce7da;border-radius:5px;background:#fff;color:#526b56;font:10px "DM Mono",monospace}
+.submission-list{display:grid;margin-top:12px}
+.submission-item{display:flex;align-items:center;gap:10px;width:100%;padding:12px 8px;border:0;border-top:1px solid #eef1ed;background:#fff;text-align:left}
+.submission-item.selected{border-radius:7px;background:#f1f7ef}
+.submission-item>span:nth-child(2){display:grid;flex:1;gap:4px;min-width:0}
+.submission-item b{color:#3c5543;font-size:10px}
+.submission-item small{overflow:hidden;color:#8a978d;font-size:9px;text-overflow:ellipsis;white-space:nowrap}
+.submission-item>span:last-child{color:#78927b;font-size:19px}
+.submission-avatar{display:grid;place-items:center;flex:none;width:31px;height:31px;border-radius:8px;background:#eaf3e6;color:#47734c;font-weight:700}
+.answer-list{display:grid;gap:0;margin-top:12px}
+.answer-row{display:grid;gap:5px;padding:10px 0;border-top:1px solid #eef1ed}
+.answer-row small{color:#89968d;font-size:9px;text-transform:capitalize}
+.answer-row b{color:#435b49;font-size:10px;overflow-wrap:anywhere}
+.review-history{display:grid;gap:8px;margin-top:15px;padding-top:13px;border-top:1px solid #edf1ec}
+.review-history>b,.review-form>b,.evidence-form>b{color:#3e5845;font-size:11px}
+.review-history>small{color:#89968d;font-size:10px}
+.history-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:7px 0;color:#5c7061;font-size:9px}
+.history-row small{color:#909b92}
+.review-form,.evidence-form{display:grid;gap:12px;margin-top:16px;padding-top:15px;border-top:1px solid #edf1ec}
+.review-form .form-grid,.evidence-form .form-grid{margin-top:0}
+.review-form .primary-button,.evidence-form .primary-button{margin-left:auto}
+.evidence-form p{margin:-6px 0 0;color:#8b978e;font-size:9px;line-height:1.5}
+.supplier-portal-page{display:grid;place-items:center;min-height:100vh;padding:30px 16px;background:radial-gradient(ellipse at 20% 0%,#e5f0e2 0%,#f5f7f4 48%,#eef3ed 100%)}
+.supplier-portal-card{width:min(720px,100%);padding:clamp(20px,5vw,42px);border:1px solid #e1e9df;border-radius:14px;background:#fff;box-shadow:0 16px 55px #1a3a2310}
+.supplier-portal-card>.brand{margin-bottom:34px;color:#1c3a2a}
+.supplier-portal-card .brand-tag{border-color:#dce7dc;color:#698271}
+.supplier-portal-card h1{margin:12px 0;color:#1c3027;font:750 clamp(24px,4vw,32px) Manrope,sans-serif;letter-spacing:-1px}
+.supplier-portal-card>.muted{line-height:1.7}
+.portal-supplier{margin:18px 0;padding:12px;border-radius:7px;background:#f3f7f1;color:#718276;font-size:10px}
+.portal-supplier b{color:#3e6244}
+.portal-form{display:grid;gap:17px;margin-top:20px}
+.portal-form label{display:grid;gap:8px;color:#405748;font-size:12px;font-weight:650}
+.portal-form label>span{color:#a45d4d}
+.portal-form input,.portal-form select,.portal-form textarea{width:100%;min-height:42px;padding:10px 12px;border:1px solid #dfe7df;border-radius:7px;background:#fff;color:#33483a;font:12px "DM Sans",sans-serif}
+.portal-form textarea{resize:vertical}
+.portal-form .primary-button{width:100%;margin-top:6px}
+.portal-success,.portal-error{padding:35px 0;text-align:center}
+.portal-success>span{display:grid;place-items:center;width:48px;height:48px;margin:0 auto 15px;border-radius:50%;background:#eaf5e7;color:#477b48;font-size:25px}
+.portal-success p,.portal-error p{color:#7e8c82;font-size:12px;line-height:1.7}
+@media(max-width:1000px){.supplier-review-grid{grid-template-columns:1fr}}
+@media(max-width:760px){.supplier-form{grid-template-columns:1fr}.question-editor{grid-template-columns:1fr 1fr}.question-editor>label:first-child{grid-column:span 2}.supplier-review-grid{gap:10px}.invitation-result>div{align-items:stretch;flex-direction:column}}
