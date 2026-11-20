@@ -26,7 +26,7 @@
 The application runtime role must be a dedicated, non-superuser role without BYPASSRLS and must not own the tenant tables. Migration privileges belong to a separate deployment role. PostgreSQL superusers always bypass RLS, so do not run the application as a superuser. The local Docker Compose account is a development convenience and is not a production credential.
 
 ## Operational controls still required before production
-- Rate limiting and abuse monitoring on registration, login and refresh endpoints.
+- Registration, login and refresh have per-process rate limits; production multi-instance deployments must use a shared rate-limit store and centralized abuse monitoring.
 - Email verification, password reset, MFA and session/device management.
 - CSRF review for cookie-authenticated refresh/logout flows when deployment origins or cookie policy change.
 - Secret rotation and a managed secret store for JWT_ACCESS_SECRET.
