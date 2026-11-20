@@ -20,3 +20,19 @@ Phase 7 adds tenant-scoped evidence metadata and append-only review decisions fo
 - Every registration and decision emits an organization audit event.
 
 All routes require an authenticated organization context. The external single-use supplier invitation endpoints remain public and token-protected.
+
+
+## Evidence-level approval history
+
+In addition to submission-level reviews, each uploaded evidence item has its own append-only review history.
+
+- `POST /api/v1/suppliers/submissions/:submissionId/evidence/:evidenceId/reviews` records `APPROVED`, `REJECTED`, or `NEEDS_CHANGES`.
+- `GET /api/v1/suppliers/submissions/:submissionId/evidence/:evidenceId/reviews` returns the ordered review history and current derived decision.
+- Only organization owners, admins and auditors can record decisions. Members can read the history.
+- The uploader cannot review their own evidence.
+- S3-backed evidence must have a successful malware-scan registration audit event before it can be reviewed.
+- Every decision and its audit event are written in the same tenant-scoped transaction.
+- Review history is append-only; a later decision supersedes the current derived decision without erasing earlier decisions.
+- PostgreSQL row-level security, composite tenant/evidence foreign keys and database mutation-rejection triggers protect the review records.
+
+This is an evidence-file approval trail, separate from the existing supplier-submission review trail. A review decision is not a legal attestation or external assurance opinion.
