@@ -172,6 +172,17 @@ Scenario analysis sums expected reductions from PLANNED, IN_PROGRESS and COMPLET
 
 Reports are based on immutable calculation snapshots and clearly distinguish supplier submission coverage and planned target scenarios from verified emissions or realized reductions. See `docs/domain/analytics-and-reporting.md`.
 
+## Webhook integrations and event outbox (Phase 10A)
+
+- POST `/api/v1/webhooks/endpoints` — OWNER/ADMIN register an HTTPS endpoint and subscribe to event types; signing secret is shown once.
+- GET `/api/v1/webhooks/endpoints` — list tenant-scoped endpoint metadata.
+- PATCH `/api/v1/webhooks/endpoints/:endpointId/disable` — disable an endpoint.
+- GET `/api/v1/webhooks/deliveries` — inspect durable delivery queue records.
+
+Supplier questionnaire submissions enqueue `supplier.submission.created` deliveries in the same database transaction as the submission and audit record. Secrets are AES-256-GCM encrypted at rest; configure `WEBHOOK_ENCRYPTION_KEY` using a 32-byte hex key (for example, `openssl rand -hex 32`). Endpoint creation rejects obvious local/private destinations, but complete DNS/IP pinning and egress controls are required before outbound delivery.
+
+**Current boundary:** this increment persists and exposes the outbox; the background delivery worker, retries, HMAC request signing and verified outbound delivery are not yet deployed. PENDING means queued, not delivered. See `docs/domain/webhooks-and-event-outbox.md`.
+
 ## Engineering commands
 
 - `pnpm typecheck` — TypeScript checks across workspaces
