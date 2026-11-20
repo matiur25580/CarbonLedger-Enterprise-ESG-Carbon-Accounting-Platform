@@ -1,0 +1,49 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
+
+:root {
+  font-family: "DM Sans", sans-serif;
+  color: #e8eee9;
+  background: #10251f;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; min-height: 100vh; }
+.shell {
+  min-height: 100vh;
+  padding: 0 clamp(24px, 8vw, 120px);
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(ellipse at 75% 35%, #1e4637 0%, #10251f 52%, #0c1c18 100%);
+}
+.topbar {
+  height: 88px; display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid #ffffff19;
+}
+.brand { display: flex; gap: 12px; align-items: center; color: #f1f5f1; text-decoration: none; font-weight: 700; font-size: 18px; letter-spacing: -.5px; }
+.brand-mark { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; color: #10251f; background: #b9e6a4; font-family: Manrope, sans-serif; font-weight: 800; }
+.topbar-label, .eyebrow, .status-label, footer { font-family: "DM Mono", monospace; letter-spacing: 1.4px; font-size: 10px; color: #9ab4a5; }
+.hero { width: min(760px, 100%); margin: auto 0; padding: 100px 0 120px; }
+.eyebrow { display: flex; align-items: center; gap: 10px; color: #b9e6a4; }
+.pulse { width: 7px; height: 7px; border-radius: 50%; background: #b9e6a4; box-shadow: 0 0 14px #b9e6a4; }
+h1 { margin: 28px 0 20px; font: 700 clamp(64px, 10vw, 112px)/.98 Manrope, sans-serif; letter-spacing: -7px; }
+h1 em { color: #b9e6a4; font-style: normal; }
+.intro { max-width: 510px; color: #b0c2b8; font-size: 18px; line-height: 1.75; }
+.status-card { margin-top: 52px; width: min(530px, 100%); padding: 20px 22px; display: flex; align-items: center; justify-content: space-between; gap: 18px; border: 1px solid #ffffff24; border-radius: 14px; background: #ffffff08; }
+.status-card > div { display: grid; gap: 8px; }
+.status-card strong { font-size: 14px; font-weight: 500; }
+.status-label { font-size: 9px; }
+.status-pill { display: flex; align-items: center; gap: 7px; padding: 7px 10px; border-radius: 20px; background: #ffffff12; color: #d8e2db; font: 10px "DM Mono", monospace; text-transform: uppercase; }
+.status-pill i { width: 6px; height: 6px; border-radius: 50%; background: #e6bd73; }
+.status-pill.online i { background: #a9e28e; }
+.status-pill.offline i { background: #e58d7d; }
+footer { display: flex; justify-content: space-between; padding: 26px 0; border-top: 1px solid #ffffff19; font-size: 9px; }
+@media (max-width: 600px) {
+  .topbar-label { display: none; }
+  .hero { padding: 76px 0 90px; }
+  h1 { letter-spacing: -4px; }
+  .intro { font-size: 16px; }
+  .status-card { align-items: flex-start; flex-direction: column; }
+  footer { gap: 16px; flex-direction: column; }
+}
