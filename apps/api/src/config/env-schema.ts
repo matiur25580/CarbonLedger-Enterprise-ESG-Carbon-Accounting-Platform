@@ -8,6 +8,9 @@ export const envSchema = z.object({
   APP_DATABASE_URL: z.string().min(1, "APP_DATABASE_URL is required for application queries"),
   DATABASE_ADMIN_URL: z.string().optional(),
   JWT_ACCESS_SECRET: z.string().min(32, "JWT_ACCESS_SECRET must contain at least 32 characters"),
+  RESEND_API_KEY: z.preprocess((value) => value === "" ? undefined : value, z.string().min(10).optional()),
+  EMAIL_FROM: z.string().email().optional(),
+  SUPPLIER_EMAIL_ENCRYPTION_KEY: z.preprocess((value) => value === "" ? undefined : value, z.string().regex(/^[a-fA-F0-9]{64}$/).optional()),
   WEBHOOK_ENCRYPTION_KEY: z.preprocess((value) => value === "" ? undefined : value, z.string().regex(/^[a-fA-F0-9]{64}$/, "WEBHOOK_ENCRYPTION_KEY must be 32 bytes encoded as 64 hex characters").optional()),
   COOKIE_SECURE: z.enum(["true", "false"]).default("false").transform((value) => value === "true"),
   RATE_LIMIT_STORE: z.enum(["memory", "postgres"]).default("memory"),
@@ -22,6 +25,9 @@ export const envSchema = z.object({
   const storageValues = [value.EVIDENCE_S3_BUCKET, value.EVIDENCE_S3_REGION, value.EVIDENCE_S3_ACCESS_KEY_ID, value.EVIDENCE_S3_SECRET_ACCESS_KEY];
   if (storageValues.some(Boolean) && !storageValues.every(Boolean)) {
     context.addIssue({ code: z.ZodIssueCode.custom, path: ["EVIDENCE_S3_BUCKET"], message: "All required EVIDENCE_S3_* storage settings must be configured together" });
+  }
+  if (value.RESEND_API_KEY && (!value.EMAIL_FROM || !value.SUPPLIER_EMAIL_ENCRYPTION_KEY)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["EMAIL_FROM"], message: "RESEND_API_KEY requires EMAIL_FROM and SUPPLIER_EMAIL_ENCRYPTION_KEY" });
   }
   if (value.NODE_ENV === "production" && !value.COOKIE_SECURE) {
     context.addIssue({
