@@ -1,4 +1,5 @@
 import { after, describe, it } from "node:test";
+import { randomUUID } from "node:crypto";
 import assert from "node:assert/strict";
 import { prisma } from "../lib/prisma.js";
 import { register, rotateRefreshToken, switchOrganization } from "./auth.service.js";
@@ -20,7 +21,7 @@ after(async () => {
 
 describe("identity and tenant isolation integration", () => {
   it("registers organizations, rotates sessions and blocks cross-tenant reads", async () => {
-    const suffix = crypto.randomUUID();
+    const suffix = randomUUID();
     const first = await register({
       name: "Tenant One Admin",
       email: `tenant-one-${suffix}@example.test`,
