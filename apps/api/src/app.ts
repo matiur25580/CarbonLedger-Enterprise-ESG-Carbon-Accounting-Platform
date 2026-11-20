@@ -18,6 +18,7 @@ import { auditRouter } from "./audit/audit.routes.js";
 import { env } from "./config/env.js";
 import { requireAuth } from "./auth/auth.middleware.js";
 import { prisma } from "./lib/prisma.js";
+import { apiRateLimiter, calculationRateLimiter, importRateLimiter } from "./security/rate-limiters.js";
 
 export const app = express();
 
@@ -44,13 +45,17 @@ app.get("/api/v1/meta", (_req, res) => {
   res.status(200).json({ name: "CarbonLedger API", version: "v1", environment: env.NODE_ENV });
 });
 
+// Health and readiness probes above remain available to infrastructure monitors.
+// All versioned business/auth APIs receive a coarse abuse-control limit.
+app.use("/api/v1", apiRateLimiter);
+
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/organizations", organizationRouter);
 app.use("/api/v1/facilities", requireAuth, facilityRouter);
 app.use("/api/v1/activity-records", requireAuth, activityRouter);
 app.use("/api/v1/emission-factors", requireAuth, emissionFactorRouter);
-app.use("/api/v1/calculations", requireAuth, calculationRouter);
-app.use("/api/v1/activity-imports", requireAuth, activityImportRouter);
+app.use("/api/v1/calculations", requireAuth, calculationRateLimiter, calculationRouter);
+app.use("/api/v1/activity-imports", requireAuth, importRateLimiter, activityImportRouter);
 app.use("/api/v1/suppliers", supplierRouter);
 app.use("/api/v1/suppliers", requireAuth, supplierEvidenceRouter);
 app.use("/api/v1/reductions", requireAuth, reductionRouter);
