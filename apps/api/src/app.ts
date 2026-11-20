@@ -10,6 +10,7 @@ import { emissionFactorRouter } from "./emission-factors/emission-factor.routes.
 import { calculationRouter } from "./calculations/calculation.routes.js";
 import { activityImportRouter } from "./imports/activity-import.routes.js";
 import { supplierRouter } from "./suppliers/supplier.routes.js";
+import { supplierEvidenceRouter } from "./suppliers/supplier-evidence.routes.js";
 import { env } from "./config/env.js";
 import { requireAuth } from "./auth/auth.middleware.js";
 import { prisma } from "./lib/prisma.js";
@@ -46,7 +47,8 @@ app.use("/api/v1/activity-records", requireAuth, activityRouter);
 app.use("/api/v1/emission-factors", requireAuth, emissionFactorRouter);
 app.use("/api/v1/calculations", requireAuth, calculationRouter);
 app.use("/api/v1/activity-imports", requireAuth, activityImportRouter);
-app.use("/api/v1/suppliers", supplierRouter);
+app.use("/api/v1/suppliers", requireAuth, supplierRouter);
+app.use("/api/v1/suppliers", requireAuth, supplierEvidenceRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ error: { code: "NOT_FOUND", message: "Route not found" } });
