@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
+import { env } from "./config/env";
 
 type ApiStatus = "checking" | "online" | "offline";
-
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000/api/v1";
 
 export default function App() {
   const [apiStatus, setApiStatus] = useState<ApiStatus>("checking");
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${apiBaseUrl}/health/live`, { signal: controller.signal })
+    fetch(`${env.VITE_API_BASE_URL}/health/live`, { signal: controller.signal })
       .then((response) => {
         if (!response.ok) throw new Error("API unavailable");
         setApiStatus("online");
