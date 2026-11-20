@@ -459,6 +459,7 @@ function AuditWorkspace({ session }: { session: Session }) {
   const [to, setTo] = useState(dateInput());
   const [action, setAction] = useState("");
   const [resourceType, setResourceType] = useState("");
+  const [filters, setFilters] = useState({ from: dateString(new Date(Date.now() - 29 * 86400000)), to: dateInput(), action: "", resourceType: "" });
   const [events, setEvents] = useState<AuditEvent[]>([]);
   const [page, setPage] = useState<AuditPage>({ limit: 50, offset: 0, total: 0, hasMore: false });
   const [loading, setLoading] = useState(true);
@@ -469,22 +470,22 @@ function AuditWorkspace({ session }: { session: Session }) {
   const load = useCallback(async () => {
     setLoading(true); setError("");
     try {
-      const params = new URLSearchParams({ from, to, limit: "50", offset: String(page.offset) });
-      if (action.trim()) params.set("action", action.trim());
-      if (resourceType.trim()) params.set("resourceType", resourceType.trim());
+      const params = new URLSearchParams({ from: filters.from, to: filters.to, limit: "50", offset: String(page.offset) });
+      if (filters.action.trim()) params.set("action", filters.action.trim());
+      if (filters.resourceType.trim()) params.set("resourceType", filters.resourceType.trim());
       const result = await request<{ events: AuditEvent[]; page: AuditPage }>("/audit/events?" + params.toString());
       setEvents(result.events); setPage(result.page);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load audit history");
     } finally { setLoading(false); }
-  }, [from, to, action, resourceType, page.offset]);
+  }, [filters, page.offset]);
   useEffect(() => { if (canAccess) void load(); else setLoading(false); }, [canAccess, load]);
   async function exportCsv() {
     setExporting(true); setError(""); setExportInfo(null);
     try {
-      const params = new URLSearchParams({ from, to });
-      if (action.trim()) params.set("action", action.trim());
-      if (resourceType.trim()) params.set("resourceType", resourceType.trim());
+      const params = new URLSearchParams({ from: filters.from, to: filters.to });
+      if (filters.action.trim()) params.set("action", filters.action.trim());
+      if (filters.resourceType.trim()) params.set("resourceType", filters.resourceType.trim());
       const url = api("/audit/export.csv?" + params.toString());
       const headers = new Headers({ Authorization: "Bearer " + (accessToken ?? "") });
       let response = await fetch(url, { headers, credentials: "include" });
@@ -506,7 +507,7 @@ function AuditWorkspace({ session }: { session: Session }) {
       const objectUrl = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = objectUrl;
-      anchor.download = "carbonledger-audit-" + from + "-to-" + to + ".csv";
+      anchor.download = "carbonledger-audit-" + filters.from + "-to-" + filters.to + ".csv";
       anchor.click();
       URL.revokeObjectURL(objectUrl);
       setExportInfo({ count, digest });
@@ -518,6 +519,7 @@ function AuditWorkspace({ session }: { session: Session }) {
     event.preventDefault();
     setExportInfo(null);
     setPage(current => ({ ...current, offset: 0 }));
+    setFilters({ from, to, action, resourceType });
   }
   if (!canAccess) return <section className="dashboard-content"><div className="page-heading"><div><div className="section-kicker">GOVERNANCE & ASSURANCE</div><h1>Audit & compliance</h1><p>Read-only activity history for authorized compliance roles.</p></div></div><div className="notice-info">Audit history is available to OWNER, ADMIN and AUDITOR roles. Your current role does not have access.</div></section>;
   return <section className="dashboard-content">
@@ -530,7 +532,7 @@ function AuditWorkspace({ session }: { session: Session }) {
         <label>Action<input maxLength={120} value={action} onChange={e => setAction(e.target.value)} placeholder="e.g. ACTIVITY_RECORD_APPROVED" /></label>
         <label>Resource type<input maxLength={80} value={resourceType} onChange={e => setResourceType(e.target.value)} placeholder="e.g. ActivityRecord" /></label>
       </div>
-      <div className="audit-filter-actions"><button className="primary-button compact-button" type="submit" disabled={loading}>Apply filters</button><button className="table-action" type="button" disabled={loading || exporting} onClick={() => { setFrom(dateString(new Date(Date.now() - 29 * 86400000))); setTo(dateInput()); setAction(""); setResourceType(""); setPage(current => ({ ...current, offset: 0 })); setExportInfo(null); }}>Reset</button><button className="export-button" type="button" onClick={() => void exportCsv()} disabled={exporting || !from || !to}>{exporting ? <><Spinner /> Preparing export</> : "↓ Export audit CSV"}</button></div>
+      <div className="audit-filter-actions"><button className="primary-button compact-button" type="submit" disabled={loading}>Apply filters</button><button className="table-action" type="button" disabled={loading || exporting} onClick={() => { setFrom(dateString(new Date(Date.now() - 29 * 86400000))); setTo(dateInput()); setAction(""); setResourceType(""); setPage(current => ({ ...current, offset: 0 })); setFilters({ from: dateString(new Date(Date.now() - 29 * 86400000)), to: dateInput(), action: "", resourceType: "" }); setExportInfo(null); }}>Reset</button><button className="export-button" type="button" onClick={() => void exportCsv()} disabled={exporting || !from || !to}>{exporting ? <><Spinner /> Preparing export</> : "↓ Export audit CSV"}</button></div>
     </form>
     {error && <div className="notice-error" role="alert">{error}</div>}
     {exportInfo && <div className="notice-success audit-export-result" role="status"><b>Audit CSV downloaded.</b><span>{exportInfo.count} records · SHA-256: <code>{exportInfo.digest || "Not supplied"}</code></span><small>The digest checks the downloaded file against the server-provided export digest. It is not a persisted hash chain or independent assurance.</small></div>}
