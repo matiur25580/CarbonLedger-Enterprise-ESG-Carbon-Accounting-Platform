@@ -8,6 +8,7 @@ import { facilityRouter } from "./facilities/facility.routes.js";
 import { activityRouter } from "./activities/activity.routes.js";
 import { emissionFactorRouter } from "./emission-factors/emission-factor.routes.js";
 import { calculationRouter } from "./calculations/calculation.routes.js";
+import { activityImportRouter } from "./imports/activity-import.routes.js";
 import { env } from "./config/env.js";
 import { requireAuth } from "./auth/auth.middleware.js";
 import { prisma } from "./lib/prisma.js";
@@ -43,6 +44,7 @@ app.use("/api/v1/facilities", requireAuth, facilityRouter);
 app.use("/api/v1/activity-records", requireAuth, activityRouter);
 app.use("/api/v1/emission-factors", requireAuth, emissionFactorRouter);
 app.use("/api/v1/calculations", requireAuth, calculationRouter);
+app.use("/api/v1/activity-imports", requireAuth, activityImportRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ error: { code: "NOT_FOUND", message: "Route not found" } });
