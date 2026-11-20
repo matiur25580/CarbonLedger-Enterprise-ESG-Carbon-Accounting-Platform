@@ -27,3 +27,7 @@ export async function sendInvitationEmail(payload:InvitationEmailPayload,idempot
  return typeof body.id==="string"?body.id:null;
 }
 function escapeHtml(value:string){return value.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!));}
+
+export function invitationEmailRetryDelayMs(attempt:number):number {
+ return Math.min(6*60*60*1000,30000*2**Math.min(10,Math.max(0,attempt-1)));
+}
