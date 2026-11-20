@@ -1,0 +1,44 @@
+import cors from "cors";
+import express, { type ErrorRequestHandler } from "express";
+import helmet from "helmet";
+import { env } from "./config/env.js";
+import { prisma } from "./lib/prisma.js";
+
+export const app = express();
+
+app.disable("x-powered-by");
+app.use(helmet());
+app.use(cors({ origin: env.WEB_ORIGIN, credentials: true }));
+app.use(express.json({ limit: "1mb" }));
+
+app.get("/api/v1/health/live", (_req, res) => {
+  res.status(200).json({ status: "ok", service: "carbonledger-api" });
+});
+
+app.get("/api/v1/health/ready", async (_req, res) => {
+  try {
+    await prisma.$queryRaw\`SELECT 1\`;
+    res.status(200).json({ status: "ready", dependencies: { database: "up" } });
+  } catch {
+    res.status(503).json({ status: "not_ready", dependencies: { database: "down" } });
+  }
+});
+
+app.get("/api/v1/meta", (_req, res) => {
+  res.status(200).json({
+    name: "CarbonLedger API",
+    version: "v1",
+    environment: env.NODE_ENV
+  });
+});
+
+app.use((_req, res) => {
+  res.status(404).json({ error: { code: "NOT_FOUND", message: "Route not found" } });
+});
+
+const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
+  console.error("Unhandled request error", error);
+  res.status(500).json({ error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" } });
+};
+
+app.use(errorHandler);
