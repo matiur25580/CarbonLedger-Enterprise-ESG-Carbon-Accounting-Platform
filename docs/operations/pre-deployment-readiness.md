@@ -6,8 +6,8 @@ This checklist is an operator handoff, not a deployment action. CarbonLedger has
 
 ### 1. Reproducible build and supply chain
 
-- [ ] Generate and commit the pnpm lockfile from the repository root using the documented pnpm 10 toolchain.
-- [ ] Change CI installation to `pnpm install --frozen-lockfile` only after the lockfile is committed and a clean CI run proves it works.
+- [ ] Manually run [Bootstrap pnpm lockfile](../../.github/workflows/bootstrap-lockfile.yml) from GitHub Actions on `main`. It generates the lockfile with lifecycle scripts disabled, verifies frozen installation, runs the database-backed typecheck/lint/test/build gates, and commits the lockfile plus the frozen-CI change.
+- [ ] After the workflow succeeds, verify `pnpm-lock.yaml` is present on `main` and the next regular CI run succeeds with `pnpm install --frozen-lockfile`.
 - [x] Pin third-party GitHub Actions in `.github/workflows/ci.yml` to immutable full commit SHAs.
 - [x] Enable weekly Dependabot updates for pnpm dependencies and GitHub Actions.
 - [ ] Review each Dependabot PR and security advisory; do not auto-merge unreviewed dependency changes.
@@ -81,7 +81,7 @@ Set unique, high-entropy values in the chosen secret manager. Never commit real 
 
 ## Current known pre-deployment blockers
 
-1. The repository currently has no committed `pnpm-lock.yaml`; CI still uses `pnpm install --no-frozen-lockfile`. A reproducible dependency graph is not yet guaranteed.
+1. The repository currently has no committed `pnpm-lock.yaml`. A manual bootstrap workflow is now available; run it successfully before treating dependency resolution as reproducible. Until then, regular CI still uses `pnpm install --no-frozen-lockfile`.
 2. API rate limits use an in-memory store. A shared store is required before horizontal API scaling.
 3. Production proxy trust, CORS, secrets, TLS, database roles and backup/restore remain environment-specific operator work.
 4. Supplier invitation email delivery and binary evidence storage/scanning are not implemented.
