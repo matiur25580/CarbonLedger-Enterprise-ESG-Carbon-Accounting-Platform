@@ -70,7 +70,7 @@ Sustainability and ESG teams, environmental and compliance officers, facility ma
    
    `pnpm db:generate`
 
-The Compose initialization script creates a dedicated `carbonledger_app` role without superuser or `BYPASSRLS` privileges. The API uses `APP_DATABASE_URL`; Prisma migrations use the separate `DATABASE_URL` migration connection. On an already-initialized PostgreSQL volume, apply `infra/postgres/init/01-application-role.sql` manually as the database administrator before starting the API.
+The Compose initialization script provisions a bootstrap administrator, a non-superuser `carbonledger_migrator`, and a restricted `carbonledger_app` role without `BYPASSRLS` privileges. The API uses only `APP_DATABASE_URL`; Prisma migrations use `DATABASE_URL`; `DATABASE_ADMIN_URL` is reserved for local provisioning and test cleanup. On an already-initialized PostgreSQL volume, apply `infra/postgres/init/01-application-role.sql` manually as the database administrator before starting the API.
 
 4. Apply the initial development migration:
 
