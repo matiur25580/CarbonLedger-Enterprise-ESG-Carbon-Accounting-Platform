@@ -17,7 +17,7 @@ app.get("/api/v1/health/live", (_req, res) => {
 
 app.get("/api/v1/health/ready", async (_req, res) => {
   try {
-    await prisma.$queryRaw\`SELECT 1\`;
+    await prisma.$queryRaw`SELECT 1`;
     res.status(200).json({ status: "ready", dependencies: { database: "up" } });
   } catch {
     res.status(503).json({ status: "not_ready", dependencies: { database: "down" } });
