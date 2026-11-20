@@ -23,7 +23,7 @@ export async function scanBufferWithClamAv(buffer: Buffer): Promise<{ clean: tru
       if (response.includes("\n")) finish();
     });
     socket.on("connect", () => {
-      socket.write("zINSTREAM\0");
+      socket.write("INSTREAM\0");
       const size = 64 * 1024;
       for (let offset = 0; offset < buffer.length; offset += size) {
         const part = buffer.subarray(offset, Math.min(offset + size, buffer.length));
