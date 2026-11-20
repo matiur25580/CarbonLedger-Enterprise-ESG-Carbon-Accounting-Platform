@@ -305,6 +305,77 @@ function SupplierWorkspace({session}:{session:Session}) {
  </div>;
 }
 
+type DataQualityIssue = { code: string; severity: "LOW" | "MEDIUM" | "HIGH"; message: string; activityRecordId: string };
+type DataQualityReport = {
+  period: { from: string; to: string };
+  qualityScore: number;
+  totalRecords: number;
+  recordsWithIssues: number;
+  issueCount: number;
+  issueCounts: Record<string, number>;
+  issues: DataQualityIssue[];
+  truncated: boolean;
+  analyzedLimit: number;
+};
+const qualityLabels: Record<string, string> = {
+  POSSIBLE_DUPLICATE: "Possible duplicate",
+  MISSING_SOURCE_REFERENCE: "Missing source reference",
+  STALE_DRAFT: "Stale draft",
+  REVIEW_OVERDUE: "Review overdue",
+  APPROVED_NOT_CALCULATED: "Approved, not calculated",
+  STATISTICAL_OUTLIER: "Statistical outlier"
+};
+function DataQualityWorkspace() {
+  const today = new Date();
+  const [from, setFrom] = useState(dateString(new Date(today.getFullYear(), today.getMonth() - 11, 1)));
+  const [to, setTo] = useState(dateString(today));
+  const [report, setReport] = useState<DataQualityReport | null>(null);
+  const [filter, setFilter] = useState("ALL");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const load = useCallback(async () => {
+    setLoading(true); setError("");
+    try {
+      const result = await request<DataQualityReport>(`/analytics/data-quality?from=${from}&to=${to}`);
+      setReport(result);
+    } catch (err) { setError(err instanceof Error ? err.message : "Unable to analyze data quality"); }
+    finally { setLoading(false); }
+  }, [from, to]);
+  useEffect(() => { void load(); }, [load]);
+  const visibleIssues = (report?.issues ?? []).filter(issue => filter === "ALL" || issue.severity === filter);
+  const score = report?.qualityScore ?? 0;
+  const scoreTone = score >= 85 ? "quality-good" : score >= 65 ? "quality-watch" : "quality-risk";
+  return <section className="dashboard-content">
+    <div className="page-heading"><div><div className="section-kicker">GOVERNANCE & DATA TRUST</div><h1>Data quality intelligence</h1><p>Identify suspicious activity data, missing provenance and workflow bottlenecks before reporting.</p></div><button className="export-button" onClick={() => void load()} disabled={loading}>{loading ? <Spinner /> : "↻ Refresh analysis"}</button></div>
+    <div className="filter-bar"><div className="filter-title"><span>◷</span> ANALYSIS PERIOD</div><label>From<input type="date" value={from} max={to} onChange={e => setFrom(e.target.value)} /></label><span className="filter-separator">—</span><label>To<input type="date" value={to} min={from} max={dateString(today)} onChange={e => setTo(e.target.value)} /></label><button onClick={() => void load()} disabled={loading}>{loading ? <Spinner /> : "Analyze period"}</button></div>
+    {error && <div className="notice-error" role="alert">{error} <button onClick={() => void load()}>Retry</button></div>}
+    {loading && !report ? <div className="panel chart-loading"><Spinner /> Analyzing organization activity…</div> : report && <>
+      <div className="quality-summary-grid">
+        <article className={`panel quality-score-card ${scoreTone}`}><div><span className="section-kicker">DATA QUALITY SCORE</span><strong>{report.qualityScore}<small>/100</small></strong><p>Heuristic indicator based on detected issues, not a formal assurance rating.</p></div><div className="quality-score-ring" style={{ "--quality-score": `${score * 3.6}deg` } as React.CSSProperties}><span>{score}</span></div></article>
+        <MetricCard label="RECORDS ANALYZED" value={number(report.totalRecords)} detail={report.truncated ? `First ${number(report.analyzedLimit)} records · truncated` : "Activity records in selected period"} icon="▤" />
+        <MetricCard label="RECORDS WITH ISSUES" value={number(report.recordsWithIssues)} detail={`${report.totalRecords ? number(report.recordsWithIssues / report.totalRecords * 100) : "0"}% of analyzed records`} icon="⚑" accent="amber" />
+        <MetricCard label="TOTAL FINDINGS" value={number(report.issueCount)} detail="Findings require human review" icon="◇" accent="blue" />
+      </div>
+      {report.truncated && <div className="notice-info">Analysis is limited to the first {number(report.analyzedLimit)} matching records. Narrow the reporting period for a more focused review.</div>}
+      <div className="quality-breakdown-grid">
+        <section className="panel"><div className="panel-heading"><div><span className="section-kicker">ISSUE DISTRIBUTION</span><h2>What needs attention</h2></div><span className="unit-label">{number(report.issueCount)} findings</span></div>
+          <div className="quality-breakdown">{Object.entries(qualityLabels).map(([code,label]) => <div className="quality-breakdown-row" key={code}><span>{label}</span><b>{number(report.issueCounts[code] ?? 0)}</b><div className="quality-mini-track"><span style={{width: `${report.issueCount ? (report.issueCounts[code] ?? 0) / report.issueCount * 100 : 0}%`}} /></div></div>)}</div>
+        </section>
+        <section className="panel quality-guidance"><div className="panel-heading"><div><span className="section-kicker">REVIEW GUIDANCE</span><h2>How to interpret findings</h2></div><span className="unit-label">HUMAN REVIEW</span></div>
+          <p><b>High:</b> Possible duplicate records. Compare source documents before taking action.</p>
+          <p><b>Medium:</b> Stale workflow, missing calculation or unusual quantities. Investigate with the responsible data owner.</p>
+          <p><b>Low:</b> Missing source reference. Attach or record traceable provenance where available.</p>
+          <small>Outliers and duplicate candidates are signals, not proof of errors. No record is automatically changed or deleted.</small>
+        </section>
+      </div>
+      <section className="panel quality-issues-panel"><div className="panel-heading"><div><span className="section-kicker">ACTION QUEUE</span><h2>Findings to review</h2></div><select aria-label="Filter findings by severity" value={filter} onChange={e => setFilter(e.target.value)}><option value="ALL">All severities</option><option value="HIGH">High</option><option value="MEDIUM">Medium</option><option value="LOW">Low</option></select></div>
+        {visibleIssues.length === 0 ? <div className="empty-inline">{report.issueCount === 0 ? "No quality findings were detected in this period." : "No findings match this severity filter."}</div> : <div className="table-scroll"><table className="workspace-table quality-table"><thead><tr><th>Finding</th><th>Severity</th><th>Activity record</th><th>Recommended review</th></tr></thead><tbody>{visibleIssues.map((issue,index) => <tr key={`${issue.activityRecordId}-${issue.code}-${index}`}><td><b>{qualityLabels[issue.code] ?? issue.code}</b></td><td><span className={`status-pill ${issue.severity === "HIGH" ? "rejected" : issue.severity === "MEDIUM" ? "pending" : "approved"}`}>{issue.severity}</span></td><td><code>{issue.activityRecordId.slice(0,8)}</code></td><td>{issue.message}</td></tr>)}</tbody></table></div>}
+      </section>
+    </>}
+    <footer className="dashboard-footer"><span>CARBONLEDGER · DATA QUALITY INTELLIGENCE</span><span>{from} — {to} · Findings are advisory and do not modify source records</span></footer>
+  </section>;
+}
+
 function MetricCard({ label, value, detail, icon, accent }: { label: string; value: string; detail: string; icon: string; accent?: string }) {
   return <article className="metric-card"><div className="metric-top"><span>{label}</span><span className={`metric-icon ${accent ?? ""}`}>{icon}</span></div><strong>{value}</strong><small>{detail}</small></article>;
 }
@@ -350,13 +421,13 @@ function Dashboard({ session, onLogout }: { session: Session; onLogout: () => vo
       <div className="workspace-switch"><span className="workspace-avatar">{session.organization.name.slice(0,1).toUpperCase()}</span><span><b>{session.organization.name}</b><small>{session.organization.role} WORKSPACE</small></span><span className="chevron">⌄</span></div>
       <div className="nav-label">WORKSPACE</div>
       <nav className="side-nav" aria-label="Main navigation">
-        {["Overview", "Emissions", "Activity data", "Facilities", "Suppliers", "Reduction plans", "Audit & compliance"].map((item, index) => <button key={item} className={activeNav === item ? "active" : ""} onClick={() => setActiveNav(item)}><span className="nav-icon">{["◫","◌","↗","⌂","♧","◎","▤"][index]}</span>{item}{item === "Overview" ? <span className="nav-active-dot" /> : null}</button>)}
+        {["Overview", "Emissions", "Activity data", "Data quality", "Facilities", "Suppliers", "Reduction plans", "Audit & compliance"].map((item, index) => <button key={item} className={activeNav === item ? "active" : ""} onClick={() => setActiveNav(item)}><span className="nav-icon">{["◫","◌","↗","⚑","⌂","♧","◎","▤"][index]}</span>{item}{item === "Overview" ? <span className="nav-active-dot" /> : null}</button>)}
       </nav>
       <div className="sidebar-bottom"><div className="help-card"><span className="help-icon">✳</span><b>Need a hand?</b><p>Explore the API and product documentation to get started.</p><a href="https://github.com/matiur25580/CarbonLedger-Enterprise-ESG-Carbon-Accounting-Platform/tree/main/docs" target="_blank" rel="noreferrer">View documentation ↗</a></div><div className="sidebar-status"><i className={apiStatus === "online" ? "green" : apiStatus === "offline" ? "red" : ""} /> API {apiStatus}</div></div>
     </aside>
     <main className="main-panel">
       <header className="main-header"><div className="breadcrumbs">Workspace <span>/</span> <b>{activeNav}</b></div><div className="header-actions"><span className="header-date">{new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(today)}</span><button className="icon-button" aria-label="Refresh analytics" onClick={() => void load()}>↻</button><div className="profile-wrap"><button className="profile-button" onClick={() => setProfileOpen(!profileOpen)}><span className="profile-avatar">{session.user.name.slice(0,1).toUpperCase()}</span><span className="profile-name">{session.user.name}</span><span>⌄</span></button>{profileOpen && <div className="profile-menu"><b>{session.user.name}</b><small>{session.user.email}</small><button onClick={onLogout}>Sign out</button></div>}</div></div></header>
-      {activeNav === "Activity data" || activeNav === "Facilities" ? <ActivityWorkspace session={session} activeNav={activeNav} /> : activeNav === "Suppliers" ? <SupplierWorkspace session={session} /> : <section className="dashboard-content">
+      {activeNav === "Data quality" ? <DataQualityWorkspace /> : activeNav === "Activity data" || activeNav === "Facilities" ? <ActivityWorkspace session={session} activeNav={activeNav} /> : activeNav === "Suppliers" ? <SupplierWorkspace session={session} /> : <section className="dashboard-content">
         <div className="page-heading"><div><div className="section-kicker">SUSTAINABILITY OVERVIEW</div><h1>Good {today.getHours() < 12 ? "morning" : today.getHours() < 18 ? "afternoon" : "evening"}, {session.user.name.split(" ")[0]}.</h1><p>Here’s your organization's emissions and climate performance at a glance.</p></div><button className="export-button" onClick={() => void csvDownload()}>↓ <span>Export emissions</span></button></div>
         <div className="filter-bar"><div className="filter-title"><span>◷</span> REPORTING PERIOD</div><label>From<input type="date" value={from} max={to} onChange={e => setFrom(e.target.value)} /></label><span className="filter-separator">—</span><label>To<input type="date" value={to} min={from} max={dateString(today)} onChange={e => setTo(e.target.value)} /></label><button onClick={() => void load()} disabled={loading}>{loading ? <Spinner /> : "Apply filters"}</button></div>
         {error && <div className="notice-error" role="alert">{error} <button onClick={() => void load()}>Retry</button></div>}
