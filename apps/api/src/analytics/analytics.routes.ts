@@ -168,3 +168,99 @@ analyticsRouter.get("/emissions.csv", async (req, res, next) => {
     res.status(200).send(lines);
   } catch (error) { next(error); }
 });
+
+
+// Supplier review health is an operational workflow indicator, not an ESG rating.
+analyticsRouter.get("/supplier-review-health", async (req, res, next) => {
+  const query = z.object({
+    limit: z.coerce.number().int().min(1).max(100).default(25),
+    cursor: z.string().uuid().optional(),
+    q: z.string().trim().max(100).optional(),
+    status: z.enum(["ALL", "ACTIVE", "INACTIVE"]).default("ALL")
+  }).strict().safeParse(req.query);
+  if (!query.success) {
+    res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "Invalid supplier review health filters or pagination", details: query.error.flatten() } });
+    return;
+  }
+  try {
+    const auth = (req as AuthRequest).auth!;
+    const where = {
+      organizationId: auth.organizationId,
+      ...(query.data.status === "ALL" ? {} : { status: query.data.status }),
+      ...(query.data.q ? { OR: [
+        { name: { contains: query.data.q, mode: "insensitive" as const } },
+        { category: { contains: query.data.q, mode: "insensitive" as const } },
+        { contactName: { contains: query.data.q, mode: "insensitive" as const } },
+        { contactEmail: { contains: query.data.q, mode: "insensitive" as const } },
+        { countryCode: { contains: query.data.q, mode: "insensitive" as const } }
+      ] } : {})
+    };
+    const result = await withTenantContext(auth.organizationId, async (tx) => {
+      const [rows, totalCount] = await Promise.all([
+        tx.supplier.findMany({
+          where,
+          take: query.data.limit + 1,
+          ...(query.data.cursor ? { skip: 1, cursor: { id: query.data.cursor } } : {}),
+          orderBy: [{ name: "asc" }, { id: "asc" }],
+          select: {
+            id: true, name: true, category: true, countryCode: true, status: true, createdAt: true,
+            _count: { select: { submissions: true } },
+            submissions: {
+              take: 1,
+              orderBy: [{ submittedAt: "desc" }, { id: "desc" }],
+              select: {
+                id: true, submittedAt: true,
+                reviews: { take: 1, orderBy: [{ createdAt: "desc" }, { id: "desc" }], select: { decision: true, createdAt: true } },
+                _count: { select: { evidence: true } },
+                evidence: {
+                  take: 100,
+                  orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+                  select: { id: true, reviews: { take: 1, orderBy: [{ createdAt: "desc" }, { id: "desc" }], select: { decision: true } } }
+                }
+              }
+            }
+          }
+        }),
+        tx.supplier.count({ where })
+      ]);
+      const hasMore = rows.length > query.data.limit;
+      const suppliers = rows.slice(0, query.data.limit).map((supplier) => {
+        const latest = supplier.submissions[0];
+        const evidence = latest?.evidence ?? [];
+        const evidenceDecisionCounts = { APPROVED: 0, REJECTED: 0, NEEDS_CHANGES: 0, PENDING: 0 };
+        for (const item of evidence) {
+          const decision = item.reviews[0]?.decision;
+          if (decision) evidenceDecisionCounts[decision]++;
+          else evidenceDecisionCounts.PENDING++;
+        }
+        const reviewDecision = latest?.reviews[0]?.decision ?? null;
+        const engagementState = !latest ? "NO_SUBMISSION"
+          : reviewDecision === "APPROVED" ? "APPROVED"
+          : reviewDecision === "REJECTED" ? "REJECTED"
+          : reviewDecision === "NEEDS_CHANGES" ? "NEEDS_CHANGES"
+          : "AWAITING_REVIEW";
+        return {
+          id: supplier.id, name: supplier.name, category: supplier.category,
+          countryCode: supplier.countryCode, status: supplier.status,
+          submissionCount: supplier._count.submissions,
+          latestSubmission: latest ? {
+            id: latest.id, submittedAt: latest.submittedAt,
+            reviewDecision, reviewedAt: latest.reviews[0]?.createdAt ?? null,
+            evidenceCount: latest._count.evidence,
+            evidenceReviewCounts: evidenceDecisionCounts,
+            evidenceReviewSampleTruncated: latest._count.evidence > evidence.length
+          } : null,
+          engagementState
+        };
+      });
+      const stateCounts = { NO_SUBMISSION: 0, AWAITING_REVIEW: 0, APPROVED: 0, REJECTED: 0, NEEDS_CHANGES: 0 };
+      for (const supplier of suppliers) stateCounts[supplier.engagementState]++;
+      return {
+        suppliers, totalCount, hasMore,
+        nextCursor: hasMore ? suppliers.at(-1)?.id ?? null : null,
+        pageSummary: { returned: suppliers.length, ...stateCounts }
+      };
+    });
+    res.status(200).json(result);
+  } catch (error) { next(error); }
+});
