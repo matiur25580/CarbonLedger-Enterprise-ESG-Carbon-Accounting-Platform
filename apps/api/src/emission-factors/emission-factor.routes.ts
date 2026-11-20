@@ -24,7 +24,7 @@ const createFactorSchema = z.object({
   uncertaintyPercent: z.number().min(0).max(100).optional(),
   validFrom: dateString,
   validTo: dateString.optional()
-}).refine((value) => !value.validTo || value.validTo >= value.validFrom, { path: ["validTo"], message: "Valid-to date must not precede valid-from date" });
+}).refine((value) => !value.validTo || value.validTo >= value.validFrom, { path: ["validTo"], message: "Valid-to date must not precede valid-from date" }).refine((value) => { const expected: Record<string, string> = { ELECTRICITY: "SCOPE_2", NATURAL_GAS: "SCOPE_1", DIESEL: "SCOPE_1", PETROL: "SCOPE_1", LPG: "SCOPE_1", REFRIGERANTS: "SCOPE_1", COMPANY_VEHICLES: "SCOPE_1", BUSINESS_TRAVEL: "SCOPE_3", WASTE: "SCOPE_3", WATER: "SCOPE_3", PURCHASED_GOODS: "SCOPE_3", FREIGHT: "SCOPE_3" }; return !expected[value.category] || expected[value.category] === value.scope; }, { path: ["scope"], message: "Scope does not match the selected factor category" });
 
 emissionFactorRouter.get("/", async (req, res, next) => {
   const query = z.object({
