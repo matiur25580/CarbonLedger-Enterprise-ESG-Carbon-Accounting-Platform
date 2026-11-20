@@ -101,7 +101,7 @@ Tenant member endpoints are under `/api/v1/organizations/current/members`. Only 
 
 Set a strong `JWT_ACCESS_SECRET` (at least 32 characters) in your local `.env`. For HTTPS production deployments set `COOKIE_SECURE=true`. Apply the identity schema and RLS policies with `pnpm db:migrate --name identity_tenant_security`.
 
-See `docs/security/identity-and-tenancy.md` for the threat model and production database-role requirements.
+See `docs/security/identity-and-tenancy.md` for the threat model and production database-role requirements. CI provisions PostgreSQL, applies the migration, and runs a cross-tenant row-level-security integration test.
 
 ## Engineering commands
 
