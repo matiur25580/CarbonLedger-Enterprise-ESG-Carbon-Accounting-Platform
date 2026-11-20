@@ -32,7 +32,7 @@ type FactorCandidate = {
   id: string; code: string; version: number; name: string; category: string; scope: string;
   unit: string; geographyCode: string; kgCo2ePerUnit: Prisma.Decimal;
   sourceName: string; sourceUrl: string | null; sourceVersion: string; methodology: string;
-  validFrom: Date; validTo: Date | null; uncertaintyPercent: Prisma.Decimal | null;
+  validFrom: Date; validTo: Date | null; uncertaintyPercent: Prisma.Decimal | null; status: string;
 };
 type ActivityInput = {
   id: string; category: string; scope: string; quantity: Prisma.Decimal; unit: string;
@@ -67,9 +67,9 @@ export function calculateActivity(activity: ActivityInput, factor: FactorCandida
   return { conversion, multiplier, normalizedQuantity, kgCo2e };
 }
 
-export function calculationFingerprint(organizationId: string, records: Array<{ id: string; updatedAt: Date; quantity: Prisma.Decimal; unit: string }>, geography: string) {
+export function calculationFingerprint(organizationId: string, records: Array<{ id: string; updatedAt: Date; quantity: Prisma.Decimal; unit: string }>, geography: string, factorSignature = "") {
   const canonical = [...records].sort((a, b) => a.id.localeCompare(b.id)).map((record) =>
     [record.id, record.updatedAt.toISOString(), record.quantity.toString(), record.unit]
   );
-  return createHash("sha256").update(JSON.stringify({ organizationId, geography, engine: CALCULATION_ENGINE_VERSION, records: canonical })).digest("hex");
+  return createHash("sha256").update(JSON.stringify({ organizationId, geography, engine: CALCULATION_ENGINE_VERSION, records: canonical, factorSignature })).digest("hex");
 }
