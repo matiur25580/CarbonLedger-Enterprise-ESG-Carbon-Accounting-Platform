@@ -1,0 +1,16 @@
+{
+  "name": "carbonledger",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Enterprise ESG, carbon accounting and sustainability intelligence platform",
+  "packageManager": "pnpm@10.0.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "pnpm -r --if-present lint",
+    "test": "pnpm -r --if-present test",
+    "build": "pnpm -r --if-present build"
+  }
+}
