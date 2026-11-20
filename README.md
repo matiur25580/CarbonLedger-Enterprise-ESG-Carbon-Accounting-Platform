@@ -270,7 +270,7 @@ Deployment is intentionally left to the repository owner. Before manually deploy
 - Set production secrets, TLS, proxy trust, CORS and restricted database roles.
 - Configure backups and complete a restore rehearsal.
 - Provide private object storage, malware scanning and secure evidence delivery.
-- Configure supplier invitation email delivery if required.
+- Configure Resend, a verified sender, and `SUPPLIER_EMAIL_ENCRYPTION_KEY` on API and worker processes if email delivery is required.
 - Add centralized observability, alerting and incident response ownership.
 - Complete independent security review and production-like smoke tests.
 
@@ -279,7 +279,7 @@ Deployment is intentionally left to the repository owner. Before manually deploy
 - No official emission-factor dataset is bundled; organizations must load validated, source-backed factors.
 - Scope 3 coverage depends on configured categories and available supplier/activity data.
 - The evidence vault requires private S3-compatible storage and a reachable ClamAV daemon. The PostgreSQL-backed scan worker uses retries and lease recovery; each active scan buffers at most 50 MiB.
-- Supplier invitation delivery is manual; no email provider is integrated.
+- Supplier invitation email delivery uses an encrypted PostgreSQL queue and Resend when configured; delivery status is provider-acceptance status, not proof of inbox delivery. Without provider credentials, the existing manual-link fallback remains available.
 - Activity and supplier submission lists have current first-page limits and need cursor pagination for larger tenants.
 - Reduction baselines are manually supplied; scenario projections are estimates, not verified realized reductions.
 - Data-quality scoring is heuristic and advisory, not a formal assurance opinion.
@@ -307,7 +307,7 @@ Deployment is intentionally left to the repository owner. Before manually deploy
 - [ ] Production observability integrations
 - [x] Private evidence upload, ClamAV scanning and secure download API (external storage/scanner configuration required)
 - [x] Durable asynchronous evidence scanning with retries and lease recovery
-- [ ] Supplier email delivery
+- [x] Supplier invitation email queue, encrypted payloads, Resend delivery and retry/status tracking (provider configuration required)
 - [ ] Independent security review and deployment validation
 
 ## Documentation
@@ -319,7 +319,7 @@ Deployment is intentionally left to the repository owner. Before manually deploy
 - [Supplier workspace](docs/product/supplier-workspace.md)
 - [Calculation engine](docs/domain/calculation-engine.md)
 - [Data quality and reporting](docs/domain/analytics-and-reporting.md)
-- [Webhook delivery worker](docs/domain/webhook-delivery-worker.md)
+- [Webhook delivery worker](docs/domain/webhook-delivery-worker.md)\n- [Supplier invitation email delivery](docs/security/supplier-invitation-email.md)
 - [Identity and tenancy security](docs/security/identity-and-tenancy.md)
 - [API abuse controls](docs/security/api-abuse-controls-and-dependency-hardening.md)
 - [Pre-deployment checklist](docs/operations/pre-deployment-readiness.md)
