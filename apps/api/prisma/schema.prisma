@@ -80,6 +80,13 @@ enum InitiativeStatus {
   CANCELLED
 }
 
+enum WebhookDeliveryStatus {
+  PENDING
+  PROCESSING
+  DELIVERED
+  FAILED
+}
+
 model User {
   id            String                   @id @default(uuid()) @db.Uuid
   name          String                   @db.VarChar(100)
@@ -99,6 +106,7 @@ model User {
   activityImports ActivityImportBatch[]  @relation("ActivityImportCreator")
   supplierReviews SupplierSubmissionReview[] @relation("SupplierSubmissionReviewer")
   supplierEvidenceUploads SupplierEvidence[] @relation("SupplierEvidenceUploader")
+  webhookEndpointsCreated WebhookEndpoint[] @relation("WebhookEndpointCreator")
 
   @@map("users")
 }
@@ -127,6 +135,8 @@ model Organization {
   reductionTargets ReductionTarget[]
   reductionInitiatives ReductionInitiative[]
   reductionScenarios ReductionScenario[]
+  webhookEndpoints WebhookEndpoint[]
+  webhookDeliveries WebhookDelivery[]
 
   @@map("organizations")
 }
@@ -512,4 +522,49 @@ model ReductionScenario {
   @@unique([id, organizationId])
   @@index([organizationId, targetId, createdAt])
   @@map("reduction_scenarios")
+}
+
+
+model WebhookEndpoint {
+  id                String   @id @default(uuid()) @db.Uuid
+  organizationId    String   @map("organization_id") @db.Uuid
+  url               String   @db.VarChar(2048)
+  eventTypes        String[] @map("event_types")
+  secretCiphertext  String   @map("secret_ciphertext") @db.Text
+  secretIv          String   @map("secret_iv") @db.Char(24)
+  secretAuthTag     String   @map("secret_auth_tag") @db.Char(32)
+  enabled           Boolean  @default(true)
+  createdByUserId   String   @map("created_by_user_id") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  createdBy         User @relation("WebhookEndpointCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  deliveries        WebhookDelivery[]
+  @@unique([id, organizationId])
+  @@index([organizationId, enabled, createdAt])
+  @@map("webhook_endpoints")
+}
+
+model WebhookDelivery {
+  id                String   @id @default(uuid()) @db.Uuid
+  organizationId    String   @map("organization_id") @db.Uuid
+  endpointId        String   @map("endpoint_id") @db.Uuid
+  eventId           String   @map("event_id") @db.Uuid
+  eventType         String   @map("event_type") @db.VarChar(120)
+  payload           Json
+  status            WebhookDeliveryStatus @default(PENDING)
+  attempts          Int      @default(0)
+  nextAttemptAt     DateTime @default(now()) @map("next_attempt_at")
+  lockedAt          DateTime? @map("locked_at")
+  responseStatus    Int?     @map("response_status")
+  lastError         String?  @map("last_error") @db.VarChar(1000)
+  deliveredAt       DateTime? @map("delivered_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  endpoint          WebhookEndpoint @relation(fields: [endpointId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  @@unique([id, organizationId])
+  @@index([status, nextAttemptAt, createdAt])
+  @@index([organizationId, endpointId, createdAt])
+  @@index([eventId])
+  @@map("webhook_deliveries")
 }
