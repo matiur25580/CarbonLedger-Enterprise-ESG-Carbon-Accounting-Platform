@@ -8,7 +8,7 @@ The authenticated React workspace lists organization-scoped facilities and suppo
 
 The Activity data workspace uses the existing API routes:
 
-- `GET /api/v1/activity-records?limit=100`
+- `GET /api/v1/activity-records?limit=25&status=APPROVED&cursor=<record-id>` (all filters optional except the default page size)
 - `POST /api/v1/activity-records`
 - `POST /api/v1/activity-records/:recordId/submit`
 - `POST /api/v1/activity-records/:recordId/review`
@@ -32,4 +32,4 @@ facilityCode,category,scope,quantity,unit,periodStart,periodEnd,sourceName,sourc
 
 The API remains the source of truth for tenant isolation, permissions, status transitions and validation. The browser only shows actions permitted by the signed-in role and record ownership; the server rechecks every action.
 
-This UI currently loads the first 100 activity records; cursor-based pagination is not yet exposed in this screen. The UI does not attach binary evidence files, edit immutable submitted/approved records, or provide a complete emission-factor catalogue management screen. A successful calculation creates an immutable calculation snapshot; it does not alter the underlying activity record.
+The activity register requests 25 records per page and uses the API's opaque UUID cursor with a stable period-start / ID ordering. Status filtering is applied server-side and resets pagination to the first page. Previous/Next controls navigate the cursor history; the API remains tenant-scoped and validates every cursor. The UI does not attach binary evidence files, edit immutable submitted/approved records, or provide a complete emission-factor catalogue management screen. A successful calculation creates an immutable calculation snapshot; it does not alter the underlying activity record.
