@@ -12,7 +12,7 @@ async function createSession(userId: string, organizationId: string) {
   const refreshToken = createRefreshToken();
   const tokenHash = hashRefreshToken(refreshToken);
   await prisma.refreshToken.create({
-    data: { userId, tokenHash, expiresAt: new Date(Date.now() + REFRESH_TTL_MS) }
+    data: { userId, organizationId, tokenHash, expiresAt: new Date(Date.now() + REFRESH_TTL_MS) }
   });
   return { accessToken: issueAccessToken({ sub: userId, organizationId, jti: randomUUID() }), refreshToken };
 }
@@ -22,9 +22,6 @@ export async function register(input: {
 }) {
   const existing = await prisma.user.findUnique({ where: { email: input.email } });
   if (existing) throw new Error("EMAIL_IN_USE");
-  const slugTaken = await prisma.organization.findUnique({ where: { slug: input.organizationSlug } });
-  if (slugTaken) throw new Error("ORGANIZATION_SLUG_IN_USE");
-
   const organizationId = randomUUID();
   const passwordHash = await hashPassword(input.password);
 
@@ -70,28 +67,29 @@ export async function rotateRefreshToken(token: string) {
   const existing = await prisma.refreshToken.findUnique({ where: { tokenHash } });
   if (!existing || existing.revokedAt || existing.expiresAt <= new Date()) throw new Error("INVALID_REFRESH_TOKEN");
 
-  const nextToken = createRefreshToken();
-  const nextHash = hashRefreshToken(nextToken);
-  const organization = await withUserContext(existing.userId, (tx) =>
-    tx.organizationMembership.findFirst({
-      where: { userId: existing.userId },
-      orderBy: { createdAt: "asc" },
+  const membership = await withUserContext(existing.userId, (tx) =>
+    tx.organizationMembership.findUnique({
+      where: { organizationId_userId: { organizationId: existing.organizationId, userId: existing.userId } },
       select: { organizationId: true }
     })
   );
-  if (!organization) throw new Error("NO_ACTIVE_ORGANIZATION");
+  if (!membership) throw new Error("NO_ACTIVE_ORGANIZATION");
 
+  const nextToken = createRefreshToken();
+  const nextHash = hashRefreshToken(nextToken);
   const rotated = await prisma.$transaction(async (tx) => {
     const result = await tx.refreshToken.updateMany({
       where: { id: existing.id, revokedAt: null, expiresAt: { gt: new Date() } },
       data: { revokedAt: new Date(), replacedByTokenHash: nextHash }
     });
     if (result.count !== 1) return false;
-    await tx.refreshToken.create({ data: { userId: existing.userId, tokenHash: nextHash, expiresAt: new Date(Date.now() + REFRESH_TTL_MS) } });
+    await tx.refreshToken.create({
+      data: { userId: existing.userId, organizationId: existing.organizationId, tokenHash: nextHash, expiresAt: new Date(Date.now() + REFRESH_TTL_MS) }
+    });
     return true;
   });
   if (!rotated) throw new Error("INVALID_REFRESH_TOKEN");
-  return { accessToken: issueAccessToken({ sub: existing.userId, organizationId: organization.organizationId, jti: randomUUID() }), refreshToken: nextToken };
+  return { accessToken: issueAccessToken({ sub: existing.userId, organizationId: existing.organizationId, jti: randomUUID() }), refreshToken: nextToken };
 }
 
 export async function revokeRefreshToken(token: string): Promise<void> {
@@ -108,7 +106,7 @@ export async function listUserOrganizations(userId: string) {
   );
 }
 
-export async function switchOrganization(userId: string, organizationId: string) {
+export async function switchOrganization(userId: string, organizationId: string, currentRefreshToken: string) {
   const membership = await withUserContext(userId, (tx) =>
     tx.organizationMembership.findUnique({
       where: { organizationId_userId: { organizationId, userId } },
@@ -116,9 +114,11 @@ export async function switchOrganization(userId: string, organizationId: string)
     })
   );
   if (!membership) throw new Error("ORGANIZATION_ACCESS_DENIED");
+  await revokeRefreshToken(currentRefreshToken);
+  const session = await createSession(userId, organizationId);
   return {
     organization: { ...membership.organization, role: membership.role },
-    accessToken: issueAccessToken({ sub: userId, organizationId, jti: randomUUID() })
+    ...session
   };
 }
 
