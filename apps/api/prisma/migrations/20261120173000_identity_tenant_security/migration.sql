@@ -17,7 +17,7 @@ CREATE TABLE "organization_memberships" (
   CONSTRAINT "organization_memberships_pkey" PRIMARY KEY ("organization_id", "user_id")
 );
 CREATE TABLE "refresh_tokens" (
-  "id" UUID NOT NULL, "user_id" UUID NOT NULL, "token_hash" CHAR(64) NOT NULL,
+  "id" UUID NOT NULL, "user_id" UUID NOT NULL, "organization_id" UUID NOT NULL, "token_hash" CHAR(64) NOT NULL,
   "expires_at" TIMESTAMP(3) NOT NULL, "revoked_at" TIMESTAMP(3), "replaced_by_token_hash" CHAR(64),
   "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "refresh_tokens_pkey" PRIMARY KEY ("id")
