@@ -47,7 +47,7 @@ app.use("/api/v1/activity-records", requireAuth, activityRouter);
 app.use("/api/v1/emission-factors", requireAuth, emissionFactorRouter);
 app.use("/api/v1/calculations", requireAuth, calculationRouter);
 app.use("/api/v1/activity-imports", requireAuth, activityImportRouter);
-app.use("/api/v1/suppliers", requireAuth, supplierRouter);
+app.use("/api/v1/suppliers", supplierRouter);
 app.use("/api/v1/suppliers", requireAuth, supplierEvidenceRouter);
 
 app.use((_req, res) => {
