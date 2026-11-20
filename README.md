@@ -92,6 +92,12 @@ The React application now includes organization registration, sign-in, HttpOnly 
 
 Navigation for Emissions, Activity data, Facilities, Suppliers, Reduction plans and Audit & compliance is currently a product shell; these dedicated frontend workspaces are not yet implemented. No demo emissions values are fabricated. See `docs/product/web-dashboard.md`.
 
+## Activity data and facility workspaces (Phase 13)
+
+The React client now includes organization-scoped facility management and an activity data workspace: create and activate facilities, capture source-linked activity records as drafts, submit records for review, approve/reject submissions according to role, preview and commit validated CSV imports, inspect recent import batches, and calculate approved records through the deterministic calculation API. The UI consumes the existing tenant-aware API; it does not fabricate emission factors or calculated values.
+
+Current frontend limitation: the activity register loads up to the first 100 records and does not yet expose cursor pagination. Binary evidence attachment and dedicated emission-factor catalogue UI remain future work. See `docs/product/activity-data-workspace.md`.
+
 ## Identity and organization API (Phase 2)
 
 Authentication endpoints are available under `/api/v1/auth`:
