@@ -20,7 +20,6 @@ export async function createEvidenceUploadUrl(key: string, mediaType: string, by
   const { bucket, client } = storage();
   return getSignedUrl(client, new PutObjectCommand({
     Bucket: bucket, Key: key, ContentType: mediaType, ContentLength: byteSize,
-    ServerSideEncryption: "AES256", Metadata: { "carbonledger-upload": "quarantine" }
   }), { expiresIn: 300 });
 }
 export async function inspectEvidenceObject(key: string) {
