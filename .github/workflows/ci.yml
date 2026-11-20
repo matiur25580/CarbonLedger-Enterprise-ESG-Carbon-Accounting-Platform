@@ -22,18 +22,19 @@ jobs:
         image: postgres:17-alpine
         env:
           POSTGRES_DB: carbonledger
-          POSTGRES_USER: carbonledger
-          POSTGRES_PASSWORD: carbonledger_dev
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_dev
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U carbonledger -d carbonledger"
+          --health-cmd "pg_isready -U postgres -d carbonledger"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
     env:
       NODE_ENV: test
-      DATABASE_URL: postgresql://carbonledger:carbonledger_dev@localhost:5432/carbonledger
+      DATABASE_URL: postgresql://postgres:postgres_dev@localhost:5432/carbonledger
+      APP_DATABASE_URL: postgresql://carbonledger_app:carbonledger_app_dev@localhost:5432/carbonledger
       JWT_ACCESS_SECRET: ci-only-test-signing-secret-do-not-use-in-production
       COOKIE_SECURE: "false"
     steps:
@@ -47,6 +48,10 @@ jobs:
         run: corepack enable
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
+      - name: Create restricted application database role
+        env:
+          PGPASSWORD: postgres_dev
+        run: psql -h localhost -U postgres -d carbonledger -v ON_ERROR_STOP=1 -f infra/postgres/init/01-application-role.sql
       - name: Generate Prisma Client
         run: pnpm --filter @carbonledger/api exec prisma generate
       - name: Apply database migrations
