@@ -183,7 +183,7 @@ Supplier questionnaire submissions enqueue `supplier.submission.created` deliver
 
 **Delivery worker:** a separate runnable worker now claims outbox rows with `FOR UPDATE SKIP LOCKED`, performs HTTPS delivery with DNS/IP validation and pinned connections, signs requests with HMAC-SHA256, and retries with bounded exponential backoff. Run `pnpm --filter @carbonledger/api dev:worker` locally or `pnpm --filter @carbonledger/api worker` after building. The worker is not yet provisioned as a hosted service. Delivery is at-least-once; receivers must deduplicate by event ID. See `docs/domain/webhook-delivery-worker.md`.
 
-## Engineering commands
+## Enterprise audit and compliance center (Phase 11)\n\n- GET `/api/v1/audit/events` — paginated, tenant-scoped audit history for OWNER/ADMIN/AUDITOR, with actor, action, resource, date and event filters.\n- GET `/api/v1/audit/export.csv?from=YYYY-MM-DD&to=YYYY-MM-DD` — bounded chronological CSV export with actor identity and recorded metadata.\n\nExports include an `X-Content-SHA256` digest over the exact CSV bytes, a record count and organization identifier; spreadsheet formula-leading values are neutralized. The digest verifies the downloaded export against its supplied checksum; it is not a persisted hash chain or independent assurance. Audit access remains tenant-scoped and application audit rows are append-only. See `docs/domain/audit-and-compliance-center.md`.\n\n## Engineering commands
 
 - `pnpm typecheck` — TypeScript checks across workspaces
 - `pnpm lint` — current static quality checks
