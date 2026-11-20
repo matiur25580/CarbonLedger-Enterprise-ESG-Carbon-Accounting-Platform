@@ -192,7 +192,7 @@ corepack enable
 pnpm install
 ```
 
-> A committed pnpm lockfile is still outstanding. Until it is added, dependency resolution is not fully reproducible and CI uses a non-frozen install.
+> The repository currently has no committed pnpm lockfile. Run the manually triggered [Bootstrap pnpm lockfile workflow](https://github.com/matiur25580/CarbonLedger-Enterprise-ESG-Carbon-Accounting-Platform/actions/workflows/bootstrap-lockfile.yml) on `main`. It generates the lockfile without lifecycle scripts, verifies a frozen install, runs the database-backed quality checks, then commits the lockfile and switches regular CI to frozen installs. Until that workflow succeeds, dependency resolution is not fully reproducible.
 
 ### 2. Configure local environment
 
@@ -265,7 +265,7 @@ Recent hardening also adds request correlation IDs and privacy-conscious structu
 
 Deployment is intentionally left to the repository owner. Before manually deploying, complete every relevant item in **[the pre-deployment readiness checklist](docs/operations/pre-deployment-readiness.md)**, including:
 
-- Commit `pnpm-lock.yaml` and move CI to `pnpm install --frozen-lockfile`.
+- Run the [lockfile bootstrap workflow](https://github.com/matiur25580/CarbonLedger-Enterprise-ESG-Carbon-Accounting-Platform/actions/workflows/bootstrap-lockfile.yml); confirm it commits `pnpm-lock.yaml` and switches CI to `pnpm install --frozen-lockfile`.
 - Configure a shared rate-limit store before running multiple API replicas.
 - Set production secrets, TLS, proxy trust, CORS and restricted database roles.
 - Configure backups and complete a restore rehearsal.
