@@ -161,7 +161,7 @@ See `docs/domain/activity-data-and-factor-catalogue.md` for the domain rules and
 - [x] Phase 2 — Identity, organizations and tenant isolation
 - [x] Phase 3 — Facilities, activity data and emission-factor catalogue
 - [x] Phase 4 — Versioned Scope 1/2/3 calculation engine
-- [ ] Phase 5 — ESG data collection, imports and data-quality workflows
+- [x] Phase 5 — ESG data collection, imports and data-quality workflows
 - [ ] Phase 6 — Supplier sustainability portal
 - [ ] Phase 7 — Evidence management and approvals
 - [ ] Phase 8 — Targets, initiatives and scenario analysis
