@@ -112,6 +112,7 @@ All endpoints require a valid bearer access token and enforce the selected organ
 - GET/POST `/api/v1/facilities` — list and register facilities
 - PATCH `/api/v1/facilities/:facilityId/status` — activate/deactivate a facility (OWNER/ADMIN)
 - GET/POST `/api/v1/activity-records` — filter and capture activity records
+- PATCH `/api/v1/activity-records/:recordId` — correct your draft/rejected record
 - POST `/api/v1/activity-records/:recordId/submit` — submit a draft or rejected record
 - POST `/api/v1/activity-records/:recordId/review` — approve/reject a submission (OWNER/ADMIN/AUDITOR; no self-review)
 - GET/POST `/api/v1/emission-factors` — browse and create source-backed factor versions
