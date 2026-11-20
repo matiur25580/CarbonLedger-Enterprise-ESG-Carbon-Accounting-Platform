@@ -8,7 +8,7 @@ export const activityRouter = Router();
 
 const categories = ["ELECTRICITY","NATURAL_GAS","DIESEL","PETROL","LPG","REFRIGERANTS","COMPANY_VEHICLES","BUSINESS_TRAVEL","WASTE","WATER","PURCHASED_GOODS","FREIGHT","OTHER"] as const;
 const scopes = ["SCOPE_1","SCOPE_2","SCOPE_3"] as const;
-const dateString = z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).refine((value) => { const parsed = new Date(value); return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value; }, "Invalid calendar date");
+const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => { const parsed = new Date(value); return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value; }, "Invalid calendar date");
 const createActivitySchema = z.object({
   facilityId: z.string().uuid(),
   category: z.enum(categories),
