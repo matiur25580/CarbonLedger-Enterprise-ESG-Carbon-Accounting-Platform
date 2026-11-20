@@ -72,7 +72,7 @@ Sustainability and ESG teams, environmental and compliance officers, facility ma
 
 4. Apply the initial development migration:
 
-   `pnpm db:migrate -- --name init`
+   `pnpm db:migrate --name init`
 
 5. Start the API and frontend:
 
