@@ -106,6 +106,7 @@ model User {
   activityImports ActivityImportBatch[]  @relation("ActivityImportCreator")
   supplierReviews SupplierSubmissionReview[] @relation("SupplierSubmissionReviewer")
   supplierEvidenceUploads SupplierEvidence[] @relation("SupplierEvidenceUploader")
+  supplierEvidenceReviews SupplierEvidenceReview[] @relation("SupplierEvidenceReviewer")
   webhookEndpointsCreated WebhookEndpoint[] @relation("WebhookEndpointCreator")
 
   @@map("users")
@@ -132,6 +133,7 @@ model Organization {
   supplierInvitationEmails SupplierInvitationEmail[]
   supplierSubmissions SupplierSubmission[]
   supplierEvidence SupplierEvidence[]
+  supplierEvidenceReviews SupplierEvidenceReview[]
   supplierSubmissionReviews SupplierSubmissionReview[]
   reductionTargets ReductionTarget[]
   reductionInitiatives ReductionInitiative[]
