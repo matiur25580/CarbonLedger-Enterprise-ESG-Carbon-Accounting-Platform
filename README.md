@@ -31,7 +31,7 @@ CarbonLedger is an engineering-focused ESG and carbon-accounting application. It
 | Supplier engagement | Versioned questionnaires, signed one-time invitations and submission review |
 | Evidence workflow | Private S3-compatible upload, ClamAV scanning, SHA-256 verification, evidence-level approval history and short-lived authenticated download URLs |
 | Reduction planning | Targets, initiatives and immutable planning scenarios |
-| Analytics | Scope/category/facility/month summaries, supplier coverage and CSV exports |
+| Analytics | Scope/category/facility/month summaries, supplier coverage, supplier review-health workflow indicators and CSV exports |
 | Data quality | Advisory score, severity filtering and record-level issue queue |
 | Integrations | Encrypted webhook secrets, transactional outbox and retrying delivery worker |
 | Audit | Tenant-scoped audit history and bounded CSV exports with SHA-256 digest |
