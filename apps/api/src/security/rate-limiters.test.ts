@@ -7,6 +7,7 @@ const app = express();
 app.use(calculationRateLimiter);
 app.get("/calculation", (_req, res) => res.status(200).json({ ok: true }));
 const server = app.listen(0);
+await new Promise<void>((resolve) => server.once("listening", resolve));
 const address = server.address();
 if (!address || typeof address === "string") throw new Error("Test server did not bind a TCP port");
 const baseUrl = `http://127.0.0.1:${address.port}`;
