@@ -6,7 +6,7 @@ Measure emissions. Govern sustainability data. Track reduction initiatives. Prod
 
 CarbonLedger is an enterprise software project built with the **PERN stack**: PostgreSQL, Express.js, React.js and Node.js. It is designed to help organizations collect activity data, calculate greenhouse-gas (GHG) emissions, manage suppliers and evidence, monitor reduction targets, and prepare structured sustainability disclosures.
 
-> **Project status:** Phase 1 engineering foundation. Product capabilities described below are target scope unless explicitly marked implemented.
+> **Project status:** Phase 2 identity, organization and tenant-security foundation implemented. Carbon accounting and ESG domain modules remain on the roadmap unless explicitly marked implemented.
 
 ## Product goals
 
@@ -74,7 +74,7 @@ The Compose initialization script provisions a bootstrap administrator, a non-su
 
 4. Apply the initial development migration:
 
-   `pnpm db:migrate --name init`
+   `pnpm db:migrate`
 
 5. Start the API and frontend:
 
@@ -101,7 +101,7 @@ Authentication endpoints are available under `/api/v1/auth`:
 
 Tenant member endpoints are under `/api/v1/organizations/current/members`. Only OWNER and ADMIN can update member roles; OWNER cannot be assigned through the role-update endpoint.
 
-Set a strong `JWT_ACCESS_SECRET` (at least 32 characters) in your local `.env`. For HTTPS production deployments set `COOKIE_SECURE=true`. Apply the identity schema and RLS policies with `pnpm db:migrate --name identity_tenant_security`.
+Set a strong `JWT_ACCESS_SECRET` (at least 32 characters) in your local `.env`. For HTTPS production deployments set `COOKIE_SECURE=true`. The quick-start migration command applies the committed identity schema and RLS policies.
 
 See `docs/security/identity-and-tenancy.md` for the threat model and production database-role requirements. CI provisions PostgreSQL, applies the migration, and runs a cross-tenant row-level-security integration test.
 
@@ -126,7 +126,7 @@ See `docs/security/identity-and-tenancy.md` for the threat model and production 
 
 - [x] Phase 0 — Product scope, architecture and repository foundation
 - [x] Phase 1 — Workspace, local infrastructure and quality gates (initial foundation)
-- [ ] Phase 2 — Identity, organizations and tenant isolation
+- [x] Phase 2 — Identity, organizations and tenant isolation
 - [ ] Phase 3 — Facilities, activity data and emission-factor catalogue
 - [ ] Phase 4 — Versioned Scope 1/2/3 calculation engine
 - [ ] Phase 5 — ESG data collection, imports and data-quality workflows
