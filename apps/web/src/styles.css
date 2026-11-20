@@ -129,3 +129,33 @@
 .portal-success p,.portal-error p{color:#7e8c82;font-size:12px;line-height:1.7}
 @media(max-width:1000px){.supplier-review-grid{grid-template-columns:1fr}}
 @media(max-width:760px){.supplier-form{grid-template-columns:1fr}.question-editor{grid-template-columns:1fr 1fr}.question-editor>label:first-child{grid-column:span 2}.supplier-review-grid{gap:10px}.invitation-result>div{align-items:stretch;flex-direction:column}}
+
+
+/* Phase 16 — Data quality intelligence workspace */
+.quality-summary-grid{display:grid;grid-template-columns:1.35fr repeat(3,minmax(0,1fr));gap:13px;margin:16px 0}
+.quality-score-card{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:150px;padding:20px}
+.quality-score-card>div:first-child{min-width:0}
+.quality-score-card strong{display:block;margin-top:8px;color:#294b35;font:750 34px Manrope,sans-serif;letter-spacing:-1.5px}
+.quality-score-card strong small{margin-left:4px;color:#9aa69b;font:600 13px "DM Sans",sans-serif;letter-spacing:0}
+.quality-score-card p{max-width:240px;margin:7px 0 0;color:#87948a;font-size:10px;line-height:1.5}
+.quality-score-ring{display:grid;place-items:center;flex:none;width:76px;height:76px;border-radius:50%;background:conic-gradient(#54845b var(--quality-score),#e9eee8 0);position:relative}
+.quality-score-ring:before{position:absolute;inset:7px;border-radius:50%;background:#fff;content:""}
+.quality-score-ring span{position:relative;color:#365a3d;font:750 19px Manrope,sans-serif}
+.quality-score-card.quality-watch .quality-score-ring{background:conic-gradient(#c18b42 var(--quality-score),#e9eee8 0)}
+.quality-score-card.quality-watch strong,.quality-score-card.quality-watch .quality-score-ring span{color:#9a6a2d}
+.quality-score-card.quality-risk .quality-score-ring{background:conic-gradient(#b65c4c var(--quality-score),#e9eee8 0)}
+.quality-score-card.quality-risk strong,.quality-score-card.quality-risk .quality-score-ring span{color:#a34d40}
+.quality-breakdown-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:14px;margin-bottom:14px}
+.quality-breakdown{display:grid;gap:13px;margin-top:16px}
+.quality-breakdown-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px 12px;color:#627468;font-size:11px}
+.quality-breakdown-row b{color:#405d47;font:700 11px "DM Sans",sans-serif}
+.quality-mini-track{grid-column:1/-1;height:5px;overflow:hidden;border-radius:10px;background:#eef2ed}
+.quality-mini-track span{display:block;height:100%;border-radius:10px;background:#739878}
+.quality-guidance p{margin:14px 0;color:#65776a;font-size:11px;line-height:1.6}
+.quality-guidance p b{color:#3c5942}
+.quality-guidance>small{display:block;margin-top:16px;padding-top:12px;border-top:1px solid #edf1ec;color:#929d94;font-size:10px;line-height:1.55}
+.quality-issues-panel{margin-bottom:18px}
+.quality-issues-panel .panel-heading select{min-height:34px;padding:6px 10px;border:1px solid #e0e8df;border-radius:6px;background:#fff;color:#526a57;font:11px "DM Sans",sans-serif}
+.quality-table td:last-child{min-width:230px;max-width:430px;white-space:normal;line-height:1.5}
+@media(max-width:1100px){.quality-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.quality-summary-grid,.quality-breakdown-grid{grid-template-columns:1fr}.quality-score-card{min-height:130px}.quality-table td:last-child{min-width:180px}}
