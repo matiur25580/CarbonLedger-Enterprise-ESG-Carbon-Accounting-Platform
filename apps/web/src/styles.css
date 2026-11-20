@@ -246,3 +246,9 @@
 @media(max-width:600px){.audit-filter-grid{grid-template-columns:1fr}.audit-filter-actions{align-items:stretch;flex-direction:column}.audit-filter-actions button{width:100%}.audit-pagination{align-items:flex-start;flex-direction:column}.audit-pagination>div{width:100%}.audit-pagination button{flex:1}}
 
 @media(max-width:760px){.supplier-directory-filters{grid-template-columns:1fr}.supplier-directory-filters .primary-button{width:100%}}
+
+
+/* Supplier review health filter controls */
+.supplier-health-panel .filter-actions{display:flex;align-items:center;gap:8px}
+.supplier-health-panel .filter-actions .primary-button{margin:0}
+@media(max-width:760px){.supplier-health-panel .filter-actions{width:100%}.supplier-health-panel .filter-actions button{flex:1}}
