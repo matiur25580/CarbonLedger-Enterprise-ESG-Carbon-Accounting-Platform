@@ -5,7 +5,7 @@
 - Creating an invitation still creates the seven-day, single-use signed portal token; only its SHA-256 digest is stored in the invitation row.
 - When Resend is configured, the API encrypts the recipient and message payload (including the one-time portal URL) with AES-256-GCM and inserts a tenant-scoped delivery job in the same transaction as invitation creation.
 - The background worker claims due jobs using PostgreSQL `FOR UPDATE SKIP LOCKED`, sends through the Resend HTTPS API, and records SENT/FAILED/PENDING status.
-- Provider retries use bounded exponential backoff (30 seconds up to six hours), six maximum attempts, a two-minute processing lease, and the delivery UUID as the provider idempotency key.
+- Provider retries use bounded exponential backoff (30 seconds up to six hours), six maximum attempts, a two-minute processing lease, and the delivery UUID as the provider idempotency key. If a worker crashes during the final attempt, the next poll marks the expired lease FAILED and writes an audit event instead of leaving the job stuck in PROCESSING.
 - Delivery outcomes are audit logged. The authenticated delivery-status endpoint intentionally omits encrypted payloads, invitation tokens and provider error details.
 
 ## API
