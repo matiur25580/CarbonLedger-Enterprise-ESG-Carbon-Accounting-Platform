@@ -6,7 +6,7 @@ Measure emissions. Govern sustainability data. Track reduction initiatives. Prod
 
 CarbonLedger is an enterprise software project built with the **PERN stack**: PostgreSQL, Express.js, React.js and Node.js. It is designed to help organizations collect activity data, calculate greenhouse-gas (GHG) emissions, manage suppliers and evidence, monitor reduction targets, and prepare structured sustainability disclosures.
 
-> **Project status:** Phase 4 deterministic calculation engine implemented on top of the Phase 3 facility, activity-data and factor catalogue foundations.
+> **Project status:** Phase 5 tenant-scoped CSV activity imports and data-quality validation implemented on top of the Phase 4 deterministic calculation engine.
 
 ## Product goals
 
@@ -126,6 +126,14 @@ Activity records retain facility, reporting period, quantity, unit, category, sc
 - GET `/api/v1/calculations/:runId` — retrieve immutable run and result snapshots
 
 The engine uses Decimal arithmetic, a strict unit-conversion registry, country-specific factor preference with GLOBAL fallback, date-valid published factors, deterministic request fingerprints and append-only snapshots. Unsupported units, missing factors and ambiguous factor matches fail closed. No sample emission factors are bundled; organizations must provide source-backed factors. See `docs/domain/calculation-engine.md`.
+
+## Activity data imports (Phase 5)
+
+- POST `/api/v1/activity-imports/preview` — validate CSV data and return row-level quality findings without writing.
+- POST `/api/v1/activity-imports/commit` — atomically import valid rows as DRAFT activity records.
+- GET `/api/v1/activity-imports` — list tenant-scoped import history.
+
+CSV imports support quoted fields, strict schema/date/quantity/category checks, active facility resolution, in-file and existing-record duplicate detection, 1 MiB/500-row limits, SHA-256 replay protection and auditable batch reports. Invalid or duplicate rows block the entire batch. Imported records use the standard activity submission and review workflow. See `docs/domain/activity-imports-and-quality-controls.md`.
 
 See `docs/domain/activity-data-and-factor-catalogue.md` for the domain rules and API behavior.
 
