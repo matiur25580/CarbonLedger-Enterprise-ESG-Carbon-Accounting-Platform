@@ -124,7 +124,7 @@ Inspect tenant-scoped audit events and export bounded emissions or audit records
 
 <p align="center"><img src="docs/assets/dashboards/12-audit-reporting.svg" alt="Illustrative audit and reporting dashboard" width="100%"></p>
 
-**Implementation:** Audit and reporting APIs are implemented; emissions CSV export is available from the analytics workspace. The audit digest validates the exported bytes but is not a persisted hash chain or independent timestamp.
+**Implementation:** Live read-only audit workspace for OWNER / ADMIN / AUDITOR roles, with date/action/resource filters, paginated event history, recorded metadata inspection and bounded CSV exports with SHA-256 digest. The digest validates the exported bytes but is not a persisted hash chain or independent timestamp.
 
 ---
 
@@ -318,6 +318,7 @@ Deployment is intentionally left to the repository owner. Before manually deploy
 - [Activity data workspace](docs/product/activity-data-workspace.md)
 - [Supplier workspace](docs/product/supplier-workspace.md)
 - [Reduction planning workspace](docs/product/reduction-planning-workspace.md)
+- [Audit and compliance workspace](docs/product/audit-workspace.md)
 - [Calculation engine](docs/domain/calculation-engine.md)
 - [Data quality and reporting](docs/domain/analytics-and-reporting.md)
 - [Webhook delivery worker](docs/domain/webhook-delivery-worker.md)\n- [Supplier invitation email delivery](docs/security/supplier-invitation-email.md)
