@@ -14,7 +14,7 @@ export function isPublicAddress(address: string): boolean {
   const family = isIP(address);
   if (family === 4) {
     const octets = address.split(".").map(Number);
-    const [a, b, c] = octets;
+    const [a = 0, b = 0, c = 0] = octets;
     if (a === 0 || a === 10 || a === 127 || a >= 224) return false;
     if (a === 100 && b >= 64 && b <= 127) return false;
     if (a === 169 && b === 254) return false;
@@ -25,7 +25,7 @@ export function isPublicAddress(address: string): boolean {
     return true;
   }
   if (family !== 6) return false;
-  const value = address.toLowerCase().split("%")[0];
+  const value = address.toLowerCase().split("%")[0] ?? "";
   if (value.startsWith("::ffff:")) {
     const mapped = value.slice(7);
     if (isIP(mapped) === 4) return isPublicAddress(mapped);
@@ -37,7 +37,7 @@ export function isPublicAddress(address: string): boolean {
     }
     return false;
   }
-  const first = Number.parseInt(value.split(":")[0] || "0", 16);
+  const first = Number.parseInt(value.split(":")[0] || "0", 16) || 0;
   // Permit only global-unicast 2000::/3; reject documentation, benchmarking,
   // ORCHID and other special-purpose blocks within that range.
   if (first < 0x2000 || first > 0x3fff) return false;
