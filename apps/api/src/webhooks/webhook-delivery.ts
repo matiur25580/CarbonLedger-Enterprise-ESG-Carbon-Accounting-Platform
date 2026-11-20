@@ -131,8 +131,8 @@ export async function postWebhook(input: {
 
 export function retryDelayMs(attempt: number): number {
   const exponent = Math.max(0, Math.min(attempt - 1, 10));
-  const base = Math.min(30_000 * (2 ** exponent), 6 * 60 * 60 * 1000);
-  return Math.floor(base * (0.8 + Math.random() * 0.4));
+  const base = 30_000 * (2 ** exponent);
+  return Math.floor(Math.min(base * (0.8 + Math.random() * 0.4), 6 * 60 * 60 * 1000));
 }
 
 export const webhookWorkerLimits = { maxAttempts: MAX_ATTEMPTS };
