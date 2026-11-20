@@ -6,6 +6,7 @@ import { z } from "zod";
 import { AuthRequest, requireRole } from "../auth/auth.middleware.js";
 import { withTenantContext } from "../auth/tenant-context.js";
 import { env } from "../config/env.js";
+import { enqueueWebhookEvent } from "../webhooks/webhook-outbox.js";
 
 export const supplierRouter = Router();
 const uuid = z.string().uuid();
@@ -101,6 +102,12 @@ supplierRouter.post("/portal/:token/submit",async(req,res,next)=>{
       }});
       await tx.supplierInvitation.update({where:{id:fresh.id},data:{usedAt:new Date()}});
       await tx.auditLog.create({data:{organizationId:result.claims.organizationId,actorUserId:null,action:"supplier.questionnaire_submitted",resourceType:"supplier_submission",resourceId:created.id,metadata:{supplierId:result.claims.supplierId,questionnaireId:result.invitation.questionnaireId}}});
+      await enqueueWebhookEvent(tx, result.claims.organizationId, "supplier.submission.created", {
+        submissionId: created.id,
+        supplierId: result.claims.supplierId,
+        questionnaireId: result.invitation.questionnaireId,
+        submittedAt: created.submittedAt.toISOString()
+      });
       return created;
     });
     if(!submission){res.status(409).json({error:{code:"INVITATION_ALREADY_USED",message:"This invitation has already been submitted"}});return;}
