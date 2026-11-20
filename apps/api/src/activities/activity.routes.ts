@@ -128,9 +128,16 @@ activityRouter.patch("/:recordId", requireRole("OWNER", "ADMIN", "MEMBER"), asyn
         where: { id: id.data, organizationId: auth.organizationId, createdByUserId: auth.userId, status: { in: ["DRAFT","REJECTED"] } }
       });
       if (!current) return null;
+      const nextCategory = parsed.data.category ?? current.category;
+      const nextScope = parsed.data.scope ?? current.scope;
+      const expectedScope: Record<string, string> = { ELECTRICITY: "SCOPE_2", NATURAL_GAS: "SCOPE_1", DIESEL: "SCOPE_1", PETROL: "SCOPE_1", LPG: "SCOPE_1", REFRIGERANTS: "SCOPE_1", COMPANY_VEHICLES: "SCOPE_1", BUSINESS_TRAVEL: "SCOPE_3", WASTE: "SCOPE_3", WATER: "SCOPE_3", PURCHASED_GOODS: "SCOPE_3", FREIGHT: "SCOPE_3" };
+      if (expectedScope[nextCategory] && expectedScope[nextCategory] !== nextScope) return "SCOPE_MISMATCH";
+      const nextStart = parsed.data.periodStart ? new Date(parsed.data.periodStart) : current.periodStart;
+      const nextEnd = parsed.data.periodEnd ? new Date(parsed.data.periodEnd) : current.periodEnd;
+      if (nextEnd < nextStart) return "INVALID_PERIOD";
       if (parsed.data.facilityId) {
         const facility = await tx.facility.findFirst({ where: { id: parsed.data.facilityId, organizationId: auth.organizationId, isActive: true } });
-        if (!facility) return false;
+        if (!facility) return "FACILITY_UNAVAILABLE";
       }
       const updated = await tx.activityRecord.update({
         where: { id: id.data },
@@ -146,8 +153,12 @@ activityRouter.patch("/:recordId", requireRole("OWNER", "ADMIN", "MEMBER"), asyn
       });
       return updated;
     });
-    if (result === false) {
+    if (result === "FACILITY_UNAVAILABLE") {
       res.status(400).json({ error: { code: "FACILITY_UNAVAILABLE", message: "The selected facility is not active in this organization" } });
+      return;
+    }
+    if (result === "SCOPE_MISMATCH" || result === "INVALID_PERIOD") {
+      res.status(400).json({ error: { code: result, message: result === "SCOPE_MISMATCH" ? "Scope does not match the selected activity category" : "Period end must not precede period start" } });
       return;
     }
     if (!result) {
