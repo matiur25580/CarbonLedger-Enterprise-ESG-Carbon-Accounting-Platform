@@ -192,6 +192,8 @@ model ActivityRecord {
   createdBy        User             @relation("ActivityCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   reviewedBy       User?            @relation("ActivityReviewer", fields: [reviewedByUserId], references: [id], onDelete: Restrict)
   calculationResults CalculationResult[]
+  importBatchId   String? @map("import_batch_id") @db.Uuid
+  importBatch     ActivityImportBatch? @relation(fields: [importBatchId, organizationId], references: [id, organizationId], onDelete: Restrict)
 
   @@index([organizationId, periodStart, periodEnd])
   @@unique([id, organizationId])
