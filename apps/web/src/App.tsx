@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { env } from "./config/env";
 
 type ApiStatus = "checking" | "online" | "offline";
@@ -67,7 +67,7 @@ function AuthScreen({ onSession }: { onSession: (session: Session) => void }) {
   const [slugEdited, setSlugEdited] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setBusy(true); setError("");
     try {
       const path = mode === "login" ? "/auth/login" : "/auth/register";
