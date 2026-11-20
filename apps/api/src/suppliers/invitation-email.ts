@@ -15,9 +15,9 @@ export function decryptInvitationEmail(job:{payloadCiphertext:string;payloadIv:s
  decipher.setAuthTag(Buffer.from(job.payloadAuthTag,"hex"));
  return JSON.parse(Buffer.concat([decipher.update(Buffer.from(job.payloadCiphertext,"base64")),decipher.final()]).toString("utf8")) as InvitationEmailPayload;
 }
-export async function sendInvitationEmail(payload:InvitationEmailPayload):Promise<string|null>{
+export async function sendInvitationEmail(payload:InvitationEmailPayload,idempotencyKey:string):Promise<string|null>{
  if(!env.RESEND_API_KEY||!env.EMAIL_FROM)throw new Error("Resend email delivery is not configured");
- const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:`Bearer ${env.RESEND_API_KEY}`,"Content-Type":"application/json"},body:JSON.stringify({
+ const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:`Bearer ${env.RESEND_API_KEY}`,"Content-Type":"application/json","Idempotency-Key":idempotencyKey},body:JSON.stringify({
   from:env.EMAIL_FROM,to:[payload.recipient],subject:`CarbonLedger supplier questionnaire: ${payload.questionnaireTitle}`,
   text:`Hello ${payload.supplierName},\n\nYou are invited to complete the supplier questionnaire "${payload.questionnaireTitle}".\n\nOpen your secure, single-use invitation: ${payload.portalUrl}\n\nThis link expires on ${new Date(payload.expiresAt).toUTCString()} and can only be submitted once. If you were not expecting this email, you can ignore it.\n\nCarbonLedger`,
   html:`<p>Hello ${escapeHtml(payload.supplierName)},</p><p>You are invited to complete the supplier questionnaire <strong>${escapeHtml(payload.questionnaireTitle)}</strong>.</p><p><a href="${escapeHtml(payload.portalUrl)}">Open your secure supplier questionnaire</a></p><p>This single-use link expires on ${escapeHtml(new Date(payload.expiresAt).toUTCString())}.</p><p>If you were not expecting this email, you can ignore it.</p><p>CarbonLedger</p>`
