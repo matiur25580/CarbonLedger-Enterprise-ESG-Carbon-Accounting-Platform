@@ -58,6 +58,15 @@ enum ActivityImportStatus {
   COMMITTED
 }
 
+enum SupplierStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum SupplierSubmissionStatus {
+  SUBMITTED
+}
+
 model User {
   id            String                   @id @default(uuid()) @db.Uuid
   name          String                   @db.VarChar(100)
@@ -94,6 +103,10 @@ model Organization {
   calculationRuns CalculationRun[]
   calculationResults CalculationResult[]
   activityImports ActivityImportBatch[]
+  suppliers Supplier[]
+  supplierQuestionnaires SupplierQuestionnaire[]
+  supplierInvitations SupplierInvitation[]
+  supplierSubmissions SupplierSubmission[]
 
   @@map("organizations")
 }
@@ -221,6 +234,83 @@ model ActivityImportBatch {
   @@unique([organizationId, contentSha256])
   @@index([organizationId, createdAt])
   @@map("activity_import_batches")
+}
+
+
+model Supplier {
+  id             String         @id @default(uuid()) @db.Uuid
+  organizationId String         @map("organization_id") @db.Uuid
+  name           String         @db.VarChar(180)
+  contactName    String         @map("contact_name") @db.VarChar(120)
+  contactEmail   String         @map("contact_email") @db.VarChar(254)
+  countryCode    String         @map("country_code") @db.Char(2)
+  website        String?        @db.VarChar(300)
+  category       String         @db.VarChar(100)
+  status         SupplierStatus @default(ACTIVE)
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  invitations    SupplierInvitation[]
+  submissions    SupplierSubmission[]
+  @@unique([id, organizationId])
+  @@unique([organizationId, contactEmail])
+  @@index([organizationId, status, name])
+  @@map("suppliers")
+}
+
+model SupplierQuestionnaire {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  title          String       @db.VarChar(180)
+  description    String?      @db.VarChar(2000)
+  version        Int          @default(1)
+  questions      Json
+  isPublished    Boolean      @default(false) @map("is_published")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  invitations    SupplierInvitation[]
+  submissions    SupplierSubmission[]
+  @@unique([id, organizationId])
+  @@unique([organizationId, title, version])
+  @@index([organizationId, isPublished, createdAt])
+  @@map("supplier_questionnaires")
+}
+
+model SupplierInvitation {
+  id              String                @id @default(uuid()) @db.Uuid
+  organizationId  String                @map("organization_id") @db.Uuid
+  supplierId      String                @map("supplier_id") @db.Uuid
+  questionnaireId String                @map("questionnaire_id") @db.Uuid
+  tokenHash       String                @unique @map("token_hash") @db.Char(64)
+  expiresAt       DateTime              @map("expires_at")
+  usedAt          DateTime?             @map("used_at")
+  createdAt       DateTime              @default(now()) @map("created_at")
+  organization    Organization          @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  supplier        Supplier              @relation(fields: [supplierId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  questionnaire   SupplierQuestionnaire @relation(fields: [questionnaireId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  submission      SupplierSubmission?
+  @@unique([id, organizationId])
+  @@index([organizationId, supplierId, expiresAt])
+  @@map("supplier_invitations")
+}
+
+model SupplierSubmission {
+  id              String                  @id @default(uuid()) @db.Uuid
+  organizationId  String                  @map("organization_id") @db.Uuid
+  supplierId      String                  @map("supplier_id") @db.Uuid
+  questionnaireId String                  @map("questionnaire_id") @db.Uuid
+  invitationId    String                  @unique @map("invitation_id") @db.Uuid
+  status          SupplierSubmissionStatus @default(SUBMITTED)
+  answers         Json
+  submittedAt     DateTime                @default(now()) @map("submitted_at")
+  organization    Organization             @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  supplier        Supplier                 @relation(fields: [supplierId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  questionnaire   SupplierQuestionnaire    @relation(fields: [questionnaireId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  invitation      SupplierInvitation       @relation(fields: [invitationId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  @@unique([id, organizationId])
+  @@index([organizationId, supplierId, submittedAt])
+  @@map("supplier_submissions")
 }
 
 model EmissionFactor {
