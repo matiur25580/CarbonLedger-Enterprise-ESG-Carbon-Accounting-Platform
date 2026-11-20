@@ -67,3 +67,6 @@ ALTER TABLE "audit_logs" FORCE ROW LEVEL SECURITY;
 CREATE POLICY "audit_logs_tenant_isolation" ON "audit_logs"
   USING ("organization_id" = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid)
   WITH CHECK ("organization_id" = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid);
+
+-- Audit events are append-only for the application runtime role.
+REVOKE UPDATE, DELETE ON TABLE "audit_logs" FROM carbonledger_app;
