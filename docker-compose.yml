@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: carbonledger-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: carbonledger
+      POSTGRES_USER: carbonledger
+      POSTGRES_PASSWORD: carbonledger_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - carbonledger-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carbonledger -d carbonledger"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  carbonledger-postgres-data:
