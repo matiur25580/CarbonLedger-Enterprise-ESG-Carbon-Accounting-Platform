@@ -29,7 +29,7 @@ CarbonLedger is an engineering-focused ESG and carbon-accounting application. It
 | Carbon calculations | Decimal arithmetic, unit conversion, factor validity and immutable snapshots |
 | Data ingestion | CSV preview, row validation, duplicate detection and atomic commit |
 | Supplier engagement | Versioned questionnaires, signed one-time invitations and submission review |
-| Evidence workflow | Evidence metadata and append-only review decisions; no binary file vault yet |
+| Evidence workflow | Private S3-compatible upload, ClamAV scanning, SHA-256 verification and short-lived authenticated download URLs |
 | Reduction planning | Targets, initiatives and immutable planning scenarios |
 | Analytics | Scope/category/facility/month summaries, supplier coverage and CSV exports |
 | Data quality | Advisory score, severity filtering and record-level issue queue |
@@ -278,7 +278,7 @@ Deployment is intentionally left to the repository owner. Before manually deploy
 
 - No official emission-factor dataset is bundled; organizations must load validated, source-backed factors.
 - Scope 3 coverage depends on configured categories and available supplier/activity data.
-- Evidence currently stores metadata only; no binary upload, scanning or download vault.
+- The evidence vault requires private S3-compatible storage and a reachable ClamAV daemon. Scanning is synchronous and buffers up to 50 MiB; high-volume deployments should move scanning to a durable queue.
 - Supplier invitation delivery is manual; no email provider is integrated.
 - Activity and supplier submission lists have current first-page limits and need cursor pagination for larger tenants.
 - Reduction baselines are manually supplied; scenario projections are estimates, not verified realized reductions.
@@ -305,7 +305,8 @@ Deployment is intentionally left to the repository owner. Before manually deploy
 - [ ] Lockfile and frozen CI installation
 - [x] Shared PostgreSQL rate-limit store implementation (migration and production configuration still required)
 - [ ] Production observability integrations
-- [ ] Evidence object storage, scanning and supplier email delivery
+- [x] Private evidence upload, ClamAV scanning and secure download API (external storage/scanner configuration required)
+- [ ] Durable asynchronous evidence scanning and supplier email delivery
 - [ ] Independent security review and deployment validation
 
 ## Documentation

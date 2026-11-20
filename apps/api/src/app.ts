@@ -20,6 +20,7 @@ import { requireAuth } from "./auth/auth.middleware.js";
 import { prisma } from "./lib/prisma.js";
 import { apiRateLimiter, calculationRateLimiter, importRateLimiter } from "./security/rate-limiters.js";
 import { requestContext } from "./observability/request-context.js";
+import { evidenceVaultRouter } from "./evidence/evidence-vault.routes.js";
 
 export const app = express();
 
@@ -60,6 +61,7 @@ app.use("/api/v1/calculations", requireAuth, calculationRateLimiter, calculation
 app.use("/api/v1/activity-imports", requireAuth, importRateLimiter, activityImportRouter);
 app.use("/api/v1/suppliers", supplierRouter);
 app.use("/api/v1/suppliers", requireAuth, supplierEvidenceRouter);
+app.use("/api/v1/suppliers", requireAuth, evidenceVaultRouter);
 app.use("/api/v1/reductions", requireAuth, reductionRouter);
 app.use("/api/v1/analytics", requireAuth, analyticsRouter);
 app.use("/api/v1/webhooks", requireAuth, webhookRouter);
