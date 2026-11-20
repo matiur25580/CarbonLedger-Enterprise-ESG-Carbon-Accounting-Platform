@@ -14,6 +14,7 @@ import { supplierEvidenceRouter } from "./suppliers/supplier-evidence.routes.js"
 import { reductionRouter } from "./reductions/reduction.routes.js";
 import { analyticsRouter } from "./analytics/analytics.routes.js";
 import { webhookRouter } from "./webhooks/webhook.routes.js";
+import { auditRouter } from "./audit/audit.routes.js";
 import { env } from "./config/env.js";
 import { requireAuth } from "./auth/auth.middleware.js";
 import { prisma } from "./lib/prisma.js";
@@ -55,6 +56,7 @@ app.use("/api/v1/suppliers", requireAuth, supplierEvidenceRouter);
 app.use("/api/v1/reductions", requireAuth, reductionRouter);
 app.use("/api/v1/analytics", requireAuth, analyticsRouter);
 app.use("/api/v1/webhooks", requireAuth, webhookRouter);
+app.use("/api/v1/audit", requireAuth, auditRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ error: { code: "NOT_FOUND", message: "Route not found" } });
