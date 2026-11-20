@@ -4,6 +4,7 @@ import { z } from "zod";
 import { AuthRequest } from "../auth/auth.middleware.js";
 import { withTenantContext } from "../auth/tenant-context.js";
 import { analyzeActivityQuality } from "./data-quality.engine.js";
+import { countEvidenceReviewDecisions, getSupplierEngagementState, supplierReviewHealthQuerySchema } from "./supplier-review-health.js";
 
 export const analyticsRouter = Router();
 const filters = z.object({
@@ -172,12 +173,7 @@ analyticsRouter.get("/emissions.csv", async (req, res, next) => {
 
 // Supplier review health is an operational workflow indicator, not an ESG rating.
 analyticsRouter.get("/supplier-review-health", async (req, res, next) => {
-  const query = z.object({
-    limit: z.coerce.number().int().min(1).max(100).default(25),
-    cursor: z.string().uuid().optional(),
-    q: z.string().trim().max(100).optional(),
-    status: z.enum(["ALL", "ACTIVE", "INACTIVE"]).default("ALL")
-  }).strict().safeParse(req.query);
+  const query = supplierReviewHealthQuerySchema.safeParse(req.query);
   if (!query.success) {
     res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "Invalid supplier review health filters or pagination", details: query.error.flatten() } });
     return;
@@ -227,18 +223,9 @@ analyticsRouter.get("/supplier-review-health", async (req, res, next) => {
       const suppliers = rows.slice(0, query.data.limit).map((supplier) => {
         const latest = supplier.submissions[0];
         const evidence = latest?.evidence ?? [];
-        const evidenceDecisionCounts = { APPROVED: 0, REJECTED: 0, NEEDS_CHANGES: 0, PENDING: 0 };
-        for (const item of evidence) {
-          const decision = item.reviews[0]?.decision;
-          if (decision) evidenceDecisionCounts[decision]++;
-          else evidenceDecisionCounts.PENDING++;
-        }
+        const evidenceDecisionCounts = countEvidenceReviewDecisions(evidence.map((item) => item.reviews[0]?.decision));
         const reviewDecision = latest?.reviews[0]?.decision ?? null;
-        const engagementState: "NO_SUBMISSION" | "AWAITING_REVIEW" | "APPROVED" | "REJECTED" | "NEEDS_CHANGES" = !latest ? "NO_SUBMISSION"
-          : reviewDecision === "APPROVED" ? "APPROVED"
-          : reviewDecision === "REJECTED" ? "REJECTED"
-          : reviewDecision === "NEEDS_CHANGES" ? "NEEDS_CHANGES"
-          : "AWAITING_REVIEW";
+        const engagementState = getSupplierEngagementState(Boolean(latest), reviewDecision);
         return {
           id: supplier.id, name: supplier.name, category: supplier.category,
           countryCode: supplier.countryCode, status: supplier.status,
