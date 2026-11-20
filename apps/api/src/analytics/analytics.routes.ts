@@ -3,6 +3,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { AuthRequest } from "../auth/auth.middleware.js";
 import { withTenantContext } from "../auth/tenant-context.js";
+import { analyzeActivityQuality } from "./data-quality.engine.js";
 
 export const analyticsRouter = Router();
 const filters = z.object({
@@ -89,6 +90,43 @@ analyticsRouter.get("/overview", async (req, res, next) => {
       };
     });
     res.status(200).json({ period: { from: parsed.data.from, to: parsed.data.to }, ...data });
+  } catch (error) { next(error); }
+});
+
+analyticsRouter.get("/data-quality", async (req, res, next) => {
+  const parsed = filters.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "Provide valid from/to dates and optional facilityId", details: parsed.error.flatten() } });
+    return;
+  }
+  try {
+    const auth = (req as AuthRequest).auth!;
+    const result = await withTenantContext(auth.organizationId, async (tx) => {
+      const rows = await tx.activityRecord.findMany({
+        where: {
+          organizationId: auth.organizationId,
+          periodStart: { gte: new Date(parsed.data.from), lte: new Date(parsed.data.to) },
+          ...(parsed.data.facilityId ? { facilityId: parsed.data.facilityId } : {})
+        },
+        take: 5001,
+        orderBy: [{ periodStart: "asc" }, { id: "asc" }],
+        select: {
+          id: true, facilityId: true, category: true, scope: true, quantity: true, unit: true,
+          periodStart: true, periodEnd: true, sourceName: true, sourceReference: true,
+          status: true, createdAt: true, submittedAt: true,
+          calculationResults: { select: { id: true }, take: 1 }
+        }
+      });
+      const truncated = rows.length > 5000;
+      const bounded = rows.slice(0, 5000);
+      const analysis = analyzeActivityQuality(bounded.map((row) => ({
+        ...row,
+        quantity: row.quantity.toString(),
+        hasCalculation: row.calculationResults.length > 0
+      })));
+      return { ...analysis, truncated, analyzedLimit: 5000 };
+    });
+    res.status(200).json({ period: { from: parsed.data.from, to: parsed.data.to }, ...result });
   } catch (error) { next(error); }
 });
 
