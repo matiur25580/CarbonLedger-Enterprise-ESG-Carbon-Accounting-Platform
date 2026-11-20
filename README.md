@@ -84,6 +84,25 @@ Sustainability and ESG teams, environmental and compliance officers, facility ma
 
 The local database credentials in `.env.example` are for development only. Never reuse them in a deployed environment.
 
+## Identity and organization API (Phase 2)
+
+Authentication endpoints are available under `/api/v1/auth`:
+
+- POST `/register` — create a user and initial organization owner account
+- POST `/login` — authenticate and issue a short-lived access token
+- POST `/refresh` — rotate the HttpOnly refresh cookie
+- POST `/logout` — revoke the current refresh session
+- GET `/me` — inspect the authenticated user and selected organization
+- GET `/organizations` — list organizations for the authenticated user
+- POST `/switch-organization` — switch tenant context and rotate the refresh session
+- GET `/organization` — retrieve the selected organization
+
+Tenant member endpoints are under `/api/v1/organizations/current/members`. Only OWNER and ADMIN can update member roles; OWNER cannot be assigned through the role-update endpoint.
+
+Set a strong `JWT_ACCESS_SECRET` (at least 32 characters) in your local `.env`. For HTTPS production deployments set `COOKIE_SECURE=true`. Apply the identity schema and RLS policies with `pnpm db:migrate --name identity_tenant_security`.
+
+See `docs/security/identity-and-tenancy.md` for the threat model and production database-role requirements.
+
 ## Engineering commands
 
 - `pnpm typecheck` — TypeScript checks across workspaces
