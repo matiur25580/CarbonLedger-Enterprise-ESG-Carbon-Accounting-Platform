@@ -6,7 +6,7 @@ Measure emissions. Govern sustainability data. Track reduction initiatives. Prod
 
 CarbonLedger is an enterprise software project built with the **PERN stack**: PostgreSQL, Express.js, React.js and Node.js. It is designed to help organizations collect activity data, calculate greenhouse-gas (GHG) emissions, manage suppliers and evidence, monitor reduction targets, and prepare structured sustainability disclosures.
 
-> **Project status:** Phase 9 analytics overview and calculation-backed CSV reporting implemented on top of the supplier and reduction workflows.
+> **Project status:** Phases 0–14 implemented; Phase 15 security hardening is in progress. Latest additions include layered API rate limits, a patched Vite version range, safer localhost-only development binding, and weekly Dependabot update checks.
 
 ## Product goals
 
@@ -218,7 +218,7 @@ Supplier questionnaire submissions enqueue `supplier.submission.created` deliver
 
 Exports include an `X-Content-SHA256` digest over the exact CSV bytes, a record count and organization identifier; spreadsheet formula-leading values are neutralized. The digest verifies the downloaded export against its supplied checksum; it is not a persisted hash chain or independent assurance. Audit access remains tenant-scoped and application audit rows are append-only. See `docs/domain/audit-and-compliance-center.md`.
 
-## Engineering commands
+## Security hardening (Phase 15 — in progress)\n\nThe API now applies IP-based request limits to versioned business routes, with stricter limits for calculation and activity-import endpoints. Liveness/readiness probes are excluded. These limits currently use process-local memory and must be moved to a shared store such as Redis before horizontal API scaling. Vite is constrained to the patched 6.4.6 release line and the local dev server no longer binds to all network interfaces by default. Weekly Dependabot updates are configured for pnpm and GitHub Actions.\n\nA pnpm lockfile is not yet committed, so the exact resolved dependency tree is not yet reproducible; generate and commit the lockfile before enabling frozen CI installation. See `docs/security/api-abuse-controls-and-dependency-hardening.md`.\n\n## Engineering commands
 
 - `pnpm typecheck` — TypeScript checks across workspaces
 - `pnpm lint` — current static quality checks
@@ -252,7 +252,7 @@ Exports include an `X-Content-SHA256` digest over the exact CSV bytes, a record 
 - [x] Phase 12 — Authenticated analytics dashboard
 - [x] Phase 13 — Activity data and facility workspaces
 - [x] Phase 14 — Supplier sustainability workspace
-- [ ] Phase 15 — Security, performance, accessibility and production hardening
+- [ ] Phase 15 — Security, performance, accessibility and production hardening (in progress: API rate limits, Vite advisory remediation and Dependabot configuration; lockfile and distributed rate-limit store remain outstanding)
 
 See `docs/product/mvp-scope.md` and `docs/architecture/system-design.md`.
 
