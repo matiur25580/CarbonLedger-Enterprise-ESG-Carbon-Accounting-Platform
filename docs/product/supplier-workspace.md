@@ -1,6 +1,6 @@
 # Supplier sustainability workspace (Phase 14)
 
-The React Suppliers workspace connects to the existing tenant-scoped supplier API.
+The React Suppliers workspace connects to the existing tenant-scoped supplier API. Supplier submissions are retrieved 25 at a time using a UUID cursor, with a stable submitted-time / ID ordering and Previous / Next navigation.
 
 ## Internal workspace
 
@@ -22,5 +22,5 @@ The public route `/supplier-portal/:token` loads the questionnaire from `GET /ap
 - The invitation token is not persisted in browser storage by this workspace.
 - Review decisions are append-only; answers remain immutable.
 - Evidence UI registers metadata only. It does not upload binary files, verify that an object exists, scan for malware, or provide downloads. Only register references after trusted object storage has accepted and scanned the object.
-- The UI displays up to 100 recent submissions; cursor pagination and server-side search are future improvements.
+- The UI displays 25 recent submissions per page. Supplier directory search and filtering remain future improvements.
 - Supplier invitation email delivery remains manual.
