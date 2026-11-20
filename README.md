@@ -6,7 +6,7 @@ Measure emissions. Govern sustainability data. Track reduction initiatives. Prod
 
 CarbonLedger is an enterprise software project built with the **PERN stack**: PostgreSQL, Express.js, React.js and Node.js. It is designed to help organizations collect activity data, calculate greenhouse-gas (GHG) emissions, manage suppliers and evidence, monitor reduction targets, and prepare structured sustainability disclosures.
 
-> **Project status:** Phase 6 supplier sustainability portal implemented on top of the Phase 5 tenant-scoped activity import workflow.
+> **Project status:** Phase 7 supplier evidence metadata and append-only review decisions implemented on top of the Phase 6 supplier portal.
 
 ## Product goals
 
@@ -152,9 +152,9 @@ External supplier endpoints are unauthenticated by organization credentials but 
 - GET `/api/v1/suppliers/portal/:token` — retrieve the supplier's questionnaire.
 - POST `/api/v1/suppliers/portal/:token/submit` — validate and submit answers once.
 
-Invitation tokens are stored only as SHA-256 hashes, bind supplier/questionnaire/tenant identifiers, expire after seven days, and are single-use. The API returns the token once; delivery is not automated yet (`deliveryStatus: NOT_SENT`). Submission answers are immutable and tenant-scoped. This phase records submissions; review/evidence workflows follow in Phase 7. See `docs/domain/supplier-portal.md`.
+Invitation tokens are stored only as SHA-256 hashes, bind supplier/questionnaire/tenant identifiers, expire after seven days, and are single-use. The API returns the token once; delivery is not automated yet (`deliveryStatus: NOT_SENT`). Submission answers are immutable and tenant-scoped. The API returns the token once; delivery is not automated yet (`deliveryStatus: NOT_SENT`). See `docs/domain/supplier-portal.md`.
 
-## Engineering commands
+## Supplier evidence and review workflow (Phase 7)\n\n- POST `/api/v1/suppliers/submissions/:submissionId/evidence` — register evidence object metadata (OWNER/ADMIN/MEMBER/AUDITOR).\n- GET `/api/v1/suppliers/submissions/:submissionId/evidence` — list evidence metadata.\n- POST `/api/v1/suppliers/submissions/:submissionId/reviews` — append an APPROVED, REJECTED or NEEDS_CHANGES decision (OWNER/ADMIN/AUDITOR).\n- GET `/api/v1/suppliers/submissions/:submissionId/reviews` — retrieve the ordered review history.\n\nEvidence metadata records file name, media type, byte size (maximum 50 MiB), SHA-256, storage provider and opaque object key. Binary upload, malware scanning and download delivery are **not** implemented; connect trusted object storage before treating evidence as present or safe. Evidence and review events are tenant-isolated and database-append-only. Each action is audited. See `docs/domain/supplier-evidence-and-reviews.md`.\n\n## Engineering commands
 
 - `pnpm typecheck` — TypeScript checks across workspaces
 - `pnpm lint` — current static quality checks
@@ -180,7 +180,7 @@ Invitation tokens are stored only as SHA-256 hashes, bind supplier/questionnaire
 - [x] Phase 4 — Versioned Scope 1/2/3 calculation engine
 - [x] Phase 5 — ESG data collection, imports and data-quality workflows
 - [x] Phase 6 — Supplier sustainability portal
-- [ ] Phase 7 — Evidence management and approvals
+- [x] Phase 7 — Evidence metadata and supplier review decisions
 - [ ] Phase 8 — Targets, initiatives and scenario analysis
 - [ ] Phase 9 — Analytics and reporting
 - [ ] Phase 10 — Integrations, webhooks and background processing
