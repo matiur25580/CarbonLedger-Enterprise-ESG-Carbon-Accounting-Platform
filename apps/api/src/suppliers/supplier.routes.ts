@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { Prisma } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import { Router } from "express";
 import { z } from "zod";
@@ -96,7 +97,7 @@ supplierRouter.post("/portal/:token/submit",async(req,res,next)=>{
       if(!fresh) return null;
       const created=await tx.supplierSubmission.create({data:{
         organizationId:result.claims.organizationId,supplierId:result.claims.supplierId,
-        questionnaireId:result.invitation.questionnaireId,invitationId:fresh.id,answers:body.data.answers
+        questionnaireId:result.invitation.questionnaireId,invitationId:fresh.id,answers:body.data.answers as Prisma.InputJsonValue
       }});
       await tx.supplierInvitation.update({where:{id:fresh.id},data:{usedAt:new Date()}});
       await tx.auditLog.create({data:{organizationId:result.claims.organizationId,actorUserId:null,action:"supplier.questionnaire_submitted",resourceType:"supplier_submission",resourceId:created.id,metadata:{supplierId:result.claims.supplierId,questionnaireId:result.invitation.questionnaireId}}});
