@@ -23,6 +23,10 @@ CarbonLedger is an enterprise software project built with the **PERN stack**: Po
 
 Sustainability and ESG teams, environmental and compliance officers, facility managers, procurement teams, finance teams, auditors and executive leadership.
 
+## Pre-deployment operations
+
+The CI workflow now pins GitHub Actions to immutable full commit SHAs. Before any manual deployment, follow `docs/operations/pre-deployment-readiness.md`. Key outstanding gates include committing a pnpm lockfile and enabling frozen installs, configuring a shared rate-limit store before API horizontal scaling, production secrets/network/database/backup configuration, and completing observability and security review. Deployment is intentionally left to the repository owner.
+ 
 ## Technology
 
 | Layer | Technology |
@@ -149,6 +153,10 @@ The engine uses Decimal arithmetic, a strict unit-conversion registry, country-s
 ## Data quality intelligence (Phase 16)
 
 The analytics API now includes `GET /api/v1/analytics/data-quality?from=YYYY-MM-DD&to=YYYY-MM-DD[&facilityId=<uuid>]`. It returns a transparent 0–100 heuristic score, issue counts and record-level findings for possible duplicates, missing source references, stale drafts, overdue reviews, approved-but-uncalculated activity and statistical quantity outliers. Analysis is capped at 5,000 records and reports truncation. Findings are review signals—not automatic corrections or proof of non-compliance. See `docs/domain/analytics-and-reporting.md`.
+
+## Data quality intelligence (Phase 16)
+
+The analytics API exposes `GET /api/v1/analytics/data-quality?from=YYYY-MM-DD&to=YYYY-MM-DD[&facilityId=<uuid>]`. The React dashboard includes a dedicated Data quality workspace with a heuristic scorecard, issue distribution, severity filtering and record-level review queue. Findings cover possible duplicates, missing source references, stale drafts, overdue reviews, approved-but-uncalculated activity and statistical outliers. Results are capped at 5,000 records and explicitly disclose truncation. Findings are advisory; no source record is automatically changed or deleted. See `docs/domain/analytics-and-reporting.md`.
 
 ## Activity data imports (Phase 5)
 
