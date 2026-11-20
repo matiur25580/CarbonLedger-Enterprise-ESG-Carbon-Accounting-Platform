@@ -4,10 +4,16 @@
   "private": true,
   "description": "Enterprise ESG, carbon accounting and sustainability intelligence platform",
   "packageManager": "pnpm@10.0.0",
-  "engines": {
-    "node": ">=22.0.0"
-  },
+  "engines": { "node": ">=22.0.0" },
   "scripts": {
+    "dev": "pnpm --parallel --filter @carbonledger/api --filter @carbonledger/web dev",
+    "dev:api": "pnpm --filter @carbonledger/api dev",
+    "dev:web": "pnpm --filter @carbonledger/web dev",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:generate": "pnpm --filter @carbonledger/api exec prisma generate",
+    "db:migrate": "pnpm --filter @carbonledger/api exec prisma migrate dev",
+    "db:studio": "pnpm --filter @carbonledger/api exec prisma studio",
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "pnpm -r --if-present lint",
     "test": "pnpm -r --if-present test",
