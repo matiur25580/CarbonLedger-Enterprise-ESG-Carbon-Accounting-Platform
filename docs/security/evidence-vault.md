@@ -14,6 +14,7 @@
 
 - `POST /api/v1/suppliers/submissions/:submissionId/evidence/upload-intents`
 - `POST /api/v1/suppliers/submissions/:submissionId/evidence/:evidenceId/complete`
+- `GET /api/v1/suppliers/submissions/:submissionId/evidence/:evidenceId/scan-status`
 - `GET /api/v1/suppliers/submissions/:submissionId/evidence/:evidenceId/download`
 
 ## Configuration
