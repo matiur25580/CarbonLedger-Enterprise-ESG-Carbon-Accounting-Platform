@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { env } from "./config/env";
+import { buildEmissionFactorPayload } from "./emission-factor-payload.js";
 
 type ApiStatus = "checking" | "online" | "offline";
 type User = { id: string; name: string; email: string };
@@ -316,7 +317,7 @@ function EmissionFactorWorkspace({session}:{session:Session}){
  const canManage=["OWNER","ADMIN"].includes(session.organization.role);
  const load=useCallback(async()=>{setLoading(true);setError("");try{const p=new URLSearchParams();if(status!=="ALL")p.set("status",status);if(category!=="ALL")p.set("category",category);if(geo.trim())p.set("geographyCode",geo.trim().toUpperCase());p.set("limit","100");const r=await request<{factors:Factor[]}>("/emission-factors?"+p.toString());setFactors(r.factors);}catch(e){setError(e instanceof Error?e.message:"Unable to load factor catalogue");}finally{setLoading(false);}},[status,category,geo]);
  useEffect(()=>{void load();},[load]);
- async function create(e:FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);setError("");setNotice("");try{const body={...draft,...(draft.sourceUrl?{sourceUrl:draft.sourceUrl}:{}),...(draft.validTo?{validTo:draft.validTo}:{})};await request("/emission-factors",{method:"POST",body:JSON.stringify(body)});setNotice("Draft factor version created. Verify provenance before publishing.");setShowForm(false);setDraft({...draft,code:"",name:"",kgCo2ePerUnit:"",sourceName:"",sourceUrl:"",sourceVersion:"",methodology:"",validTo:""});await load();}catch(e){setError(e instanceof Error?e.message:"Unable to create factor");}finally{setBusy(false);}}
+ async function create(e:FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);setError("");setNotice("");try{const body=buildEmissionFactorPayload(draft);await request("/emission-factors",{method:"POST",body:JSON.stringify(body)});setNotice("Draft factor version created. Verify provenance before publishing.");setShowForm(false);setDraft({...draft,code:"",name:"",kgCo2ePerUnit:"",sourceName:"",sourceUrl:"",sourceVersion:"",methodology:"",validTo:""});await load();}catch(e){setError(e instanceof Error?e.message:"Unable to create factor");}finally{setBusy(false);}}
  async function change(id:string,action:"publish"|"retire"){setBusy(true);setError("");setNotice("");try{await request("/emission-factors/"+id+"/"+action,{method:"POST"});setNotice(action==="publish"?"Factor published. Its metadata is now immutable.":"Factor retired.");await load();}catch(e){setError(e instanceof Error?e.message:"Unable to update factor");}finally{setBusy(false);}}
  return <section className="dashboard-content"><div className="page-heading"><div><div className="section-kicker">SCIENTIFIC PROVENANCE & GOVERNANCE</div><h1>Emission-factor catalogue</h1><p>Manage organization-supplied factor versions, sources, geography and validity.</p></div><button className="export-button" onClick={()=>void load()} disabled={loading}>↻ Refresh catalogue</button></div>
  {error&&<div className="notice-error" role="alert">{error}</div>}{notice&&<div className="notice-success" role="status">{notice}</div>}
