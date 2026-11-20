@@ -5,6 +5,12 @@ import { withTenantContext } from "../auth/tenant-context.js";
 
 export const supplierEvidenceRouter = Router();
 const uuid = z.string().uuid();
+export function evidenceReviewEligibility(input:{uploadedByUserId:string;reviewerUserId:string;storageProvider:string;malwareScanVerified:boolean}):"SELF_REVIEW"|"NOT_SCANNED"|"ELIGIBLE"{
+  if(input.uploadedByUserId===input.reviewerUserId)return "SELF_REVIEW";
+  if(input.storageProvider==="s3"&&!input.malwareScanVerified)return "NOT_SCANNED";
+  return "ELIGIBLE";
+}
+
 const evidenceSchema = z.object({
   fileName: z.string().trim().min(1).max(240),
   mediaType: z.string().trim().regex(/^[a-zA-Z0-9!#$&^_.+-]+\/[a-zA-Z0-9!#$&^_.+-]+$/).max(120),
@@ -79,12 +85,13 @@ supplierEvidenceRouter.post("/submissions/:submissionId/evidence/:evidenceId/rev
         select:{id:true,uploadedByUserId:true,storageProvider:true}
       });
       if(!evidence)return {kind:"NOT_FOUND" as const};
-      if(evidence.uploadedByUserId===auth.userId)return {kind:"SELF_REVIEW" as const};
+
       const scan=await tx.auditLog.findFirst({
         where:{organizationId:auth.organizationId,resourceType:"supplier_evidence",resourceId:evidence.id,action:"supplier.evidence_scanned_and_registered"},
         select:{id:true}
       });
-      if(evidence.storageProvider==="s3"&&!scan)return {kind:"NOT_SCANNED" as const};
+      const eligibility=evidenceReviewEligibility({uploadedByUserId:evidence.uploadedByUserId,reviewerUserId:auth.userId,storageProvider:evidence.storageProvider,malwareScanVerified:!!scan});
+      if(eligibility!=="ELIGIBLE")return {kind:eligibility};
       const review=await tx.supplierEvidenceReview.create({data:{
         organizationId:auth.organizationId,evidenceId:evidence.id,submissionId:submissionId.data,
         reviewerUserId:auth.userId,decision:body.data.decision,comment:body.data.comment
