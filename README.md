@@ -6,7 +6,7 @@ Measure emissions. Govern sustainability data. Track reduction initiatives. Prod
 
 CarbonLedger is an enterprise software project built with the **PERN stack**: PostgreSQL, Express.js, React.js and Node.js. It is designed to help organizations collect activity data, calculate greenhouse-gas (GHG) emissions, manage suppliers and evidence, monitor reduction targets, and prepare structured sustainability disclosures.
 
-> **Project status:** Phase 5 tenant-scoped CSV activity imports and data-quality validation implemented on top of the Phase 4 deterministic calculation engine.
+> **Project status:** Phase 6 supplier sustainability portal implemented on top of the Phase 5 tenant-scoped activity import workflow.
 
 ## Product goals
 
@@ -137,6 +137,23 @@ CSV imports support quoted fields, strict schema/date/quantity/category checks, 
 
 See `docs/domain/activity-data-and-factor-catalogue.md` for the domain rules and API behavior.
 
+## Supplier sustainability portal (Phase 6)
+
+Internal supplier management endpoints are under `/api/v1/suppliers` and require organization authentication:
+
+- GET/POST `/api/v1/suppliers` — list and onboard suppliers (OWNER/ADMIN create).
+- PATCH `/api/v1/suppliers/:supplierId/status` — activate/deactivate a supplier.
+- GET/POST `/api/v1/suppliers/questionnaires` — list/create versioned questionnaires.
+- POST `/api/v1/suppliers/questionnaires/:questionnaireId/publish` — publish a questionnaire.
+- POST `/api/v1/suppliers/:supplierId/invitations` — issue a seven-day, single-use portal token for a published questionnaire.
+- GET `/api/v1/suppliers/submissions` — review submitted supplier answers.
+
+External supplier endpoints are unauthenticated by organization credentials but require a signed, expiring invitation token:
+- GET `/api/v1/suppliers/portal/:token` — retrieve the supplier's questionnaire.
+- POST `/api/v1/suppliers/portal/:token/submit` — validate and submit answers once.
+
+Invitation tokens are stored only as SHA-256 hashes, bind supplier/questionnaire/tenant identifiers, expire after seven days, and are single-use. The API returns the token once; delivery is not automated yet (`deliveryStatus: NOT_SENT`). Submission answers are immutable and tenant-scoped. This phase records submissions; review/evidence workflows follow in Phase 7. See `docs/domain/supplier-portal.md`.
+
 ## Engineering commands
 
 - `pnpm typecheck` — TypeScript checks across workspaces
@@ -162,7 +179,7 @@ See `docs/domain/activity-data-and-factor-catalogue.md` for the domain rules and
 - [x] Phase 3 — Facilities, activity data and emission-factor catalogue
 - [x] Phase 4 — Versioned Scope 1/2/3 calculation engine
 - [x] Phase 5 — ESG data collection, imports and data-quality workflows
-- [ ] Phase 6 — Supplier sustainability portal
+- [x] Phase 6 — Supplier sustainability portal
 - [ ] Phase 7 — Evidence management and approvals
 - [ ] Phase 8 — Targets, initiatives and scenario analysis
 - [ ] Phase 9 — Analytics and reporting
