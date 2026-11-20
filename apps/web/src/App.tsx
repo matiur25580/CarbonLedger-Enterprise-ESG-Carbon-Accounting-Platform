@@ -283,7 +283,7 @@ function SupplierWorkspace({session}:{session:Session}) {
   const [a,b,c]=await Promise.all([request<{suppliers:Supplier[]}>("/suppliers"),request<{questionnaires:Questionnaire[]}>("/suppliers/questionnaires"),request<{submissions:Submission[];nextCursor:string|null}>(`/suppliers/submissions?limit=25${submissionCursor?"&cursor="+submissionCursor:""}`)]);
   setSuppliers(a.suppliers);setQuestionnaires(b.questionnaires);setSubmissions(c.submissions);setSubmissionNextCursor(c.nextCursor);
   setInviteSupplier(v=>v||a.suppliers.find(x=>x.status==="ACTIVE")?.id||"");setInviteQuestionnaire(v=>v||b.questionnaires.find(x=>x.isPublished)?.id||"");
-  setSelected(v=>v?c.submissions.find(x=>x.id===v.id)??null:c.submissions[0]??null);
+  setSelected(v=>c.submissions.find(x=>x.id===v?.id)??c.submissions[0]??null);
  }catch(e){setError(e instanceof Error?e.message:"Unable to load supplier workspace");}finally{setLoading(false);}},[submissionCursor]);
  useEffect(()=>{void load();},[load]);
  function nextSubmissionPage(){if(!submissionNextCursor)return;setSubmissionCursorHistory(current=>[...current,submissionCursor]);setSubmissionCursor(submissionNextCursor);}
