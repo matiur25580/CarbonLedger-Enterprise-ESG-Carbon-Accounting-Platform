@@ -7,4 +7,12 @@ export const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   JWT_ACCESS_SECRET: z.string().min(32, "JWT_ACCESS_SECRET must contain at least 32 characters"),
   COOKIE_SECURE: z.enum(["true", "false"]).default("false").transform((value) => value === "true")
+}).superRefine((value, context) => {
+  if (value.NODE_ENV === "production" && !value.COOKIE_SECURE) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["COOKIE_SECURE"],
+      message: "COOKIE_SECURE=true is required in production"
+    });
+  }
 });
