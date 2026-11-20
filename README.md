@@ -6,7 +6,7 @@ Measure emissions. Govern sustainability data. Track reduction initiatives. Prod
 
 CarbonLedger is an enterprise software project built with the **PERN stack**: PostgreSQL, Express.js, React.js and Node.js. It is designed to help organizations collect activity data, calculate greenhouse-gas (GHG) emissions, manage suppliers and evidence, monitor reduction targets, and prepare structured sustainability disclosures.
 
-> **Project status:** Phase 3 facility, activity-data and emission-factor catalogue foundations implemented. Emissions calculation and reporting remain on the roadmap unless explicitly marked implemented.
+> **Project status:** Phase 4 deterministic calculation engine implemented on top of the Phase 3 facility, activity-data and factor catalogue foundations.
 
 ## Product goals
 
@@ -119,7 +119,13 @@ All endpoints require a valid bearer access token and enforce the selected organ
 - POST `/api/v1/emission-factors/:factorId/publish` — publish a draft factor (OWNER/ADMIN)
 - POST `/api/v1/emission-factors/:factorId/retire` — retire a published factor without editing its provenance (OWNER/ADMIN)
 
-Activity records retain facility, reporting period, quantity, unit, category, scope, source and workflow status. Emission factors retain source name/version, methodology, geography, unit, validity window, uncertainty and immutable version metadata after publication. The initial factor values are organization-managed; no sample or placeholder factor is treated as an authoritative official value. These modules do not calculate CO2e yet—that belongs to Phase 4.
+Activity records retain facility, reporting period, quantity, unit, category, scope, source and workflow status. Emission factors retain source name/version, methodology, geography, unit, validity window, uncertainty and immutable version metadata after publication. The initial factor values are organization-managed; no sample or placeholder factor is treated as an authoritative official value. ## Versioned calculation API (Phase 4)
+
+- POST `/api/v1/calculations` — calculate 1–100 unique APPROVED activity records
+- GET `/api/v1/calculations?limit=50` — list calculation runs
+- GET `/api/v1/calculations/:runId` — retrieve immutable run and result snapshots
+
+The engine uses Decimal arithmetic, a strict unit-conversion registry, country-specific factor preference with GLOBAL fallback, date-valid published factors, deterministic request fingerprints and append-only snapshots. Unsupported units, missing factors and ambiguous factor matches fail closed. No sample emission factors are bundled; organizations must provide source-backed factors. See `docs/domain/calculation-engine.md`.
 
 See `docs/domain/activity-data-and-factor-catalogue.md` for the domain rules and API behavior.
 
@@ -146,7 +152,7 @@ See `docs/domain/activity-data-and-factor-catalogue.md` for the domain rules and
 - [x] Phase 1 — Workspace, local infrastructure and quality gates (initial foundation)
 - [x] Phase 2 — Identity, organizations and tenant isolation
 - [x] Phase 3 — Facilities, activity data and emission-factor catalogue
-- [ ] Phase 4 — Versioned Scope 1/2/3 calculation engine
+- [x] Phase 4 — Versioned Scope 1/2/3 calculation engine
 - [ ] Phase 5 — ESG data collection, imports and data-quality workflows
 - [ ] Phase 6 — Supplier sustainability portal
 - [ ] Phase 7 — Evidence management and approvals
