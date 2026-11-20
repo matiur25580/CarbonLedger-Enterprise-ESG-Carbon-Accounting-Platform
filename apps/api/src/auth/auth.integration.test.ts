@@ -21,6 +21,10 @@ after(async () => {
 
 describe("identity and tenant isolation integration", () => {
   it("registers organizations, rotates sessions and blocks cross-tenant reads", async () => {
+    const runtimeRole = await prisma.$queryRaw<Array<{ rolsuper: boolean; rolbypassrls: boolean }>>`SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user`;
+    assert.equal(runtimeRole[0]?.rolsuper, false);
+    assert.equal(runtimeRole[0]?.rolbypassrls, false);
+
     const suffix = randomUUID();
     const first = await register({
       name: "Tenant One Admin",
