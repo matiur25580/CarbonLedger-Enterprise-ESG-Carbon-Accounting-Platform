@@ -6,7 +6,7 @@ Measure emissions. Govern sustainability data. Track reduction initiatives. Prod
 
 CarbonLedger is an enterprise software project built with the **PERN stack**: PostgreSQL, Express.js, React.js and Node.js. It is designed to help organizations collect activity data, calculate greenhouse-gas (GHG) emissions, manage suppliers and evidence, monitor reduction targets, and prepare structured sustainability disclosures.
 
-> **Project status:** Phase 8 reduction targets, initiatives and immutable scenario snapshots implemented on top of the supplier evidence and review workflows.
+> **Project status:** Phase 9 analytics overview and calculation-backed CSV reporting implemented on top of the supplier and reduction workflows.
 
 ## Product goals
 
@@ -165,6 +165,13 @@ Invitation tokens are stored only as SHA-256 hashes, bind supplier/questionnaire
 
 Scenario analysis sums expected reductions from PLANNED, IN_PROGRESS and COMPLETED initiatives, then calculates projected emissions against the target threshold using Decimal arithmetic. These are planning estimates; baseline values are manually supplied and are not yet derived from historical calculation runs or verified measured reductions. See `docs/domain/reduction-targets-and-scenarios.md`.
 
+## Analytics and reporting (Phase 9)
+
+- GET `/api/v1/analytics/overview?from=YYYY-MM-DD&to=YYYY-MM-DD` — tenant-scoped emissions summary by scope, category, facility and month, plus supplier submission coverage and reduction target scenario progress. Optional `facilityId` narrows the report.
+- GET `/api/v1/analytics/emissions.csv?from=YYYY-MM-DD&to=YYYY-MM-DD` — export up to 10,000 calculated result rows with activity and emission-factor provenance. Optional `facilityId` narrows the export.
+
+Reports are based on immutable calculation snapshots and clearly distinguish supplier submission coverage and planned target scenarios from verified emissions or realized reductions. See `docs/domain/analytics-and-reporting.md`.
+
 ## Engineering commands
 
 - `pnpm typecheck` — TypeScript checks across workspaces
@@ -193,7 +200,7 @@ Scenario analysis sums expected reductions from PLANNED, IN_PROGRESS and COMPLET
 - [x] Phase 6 — Supplier sustainability portal
 - [x] Phase 7 — Evidence metadata and supplier review decisions
 - [x] Phase 8 — Targets, initiatives and scenario analysis
-- [ ] Phase 9 — Analytics and reporting
+- [x] Phase 9 — Analytics and reporting
 - [ ] Phase 10 — Integrations, webhooks and background processing
 - [ ] Phase 11 — Security, performance, accessibility and production delivery
 
