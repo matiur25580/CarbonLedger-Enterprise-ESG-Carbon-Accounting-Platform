@@ -19,6 +19,7 @@ CREATE TABLE supplier_invitation_emails (
  CONSTRAINT supplier_invitation_emails_invitation_key UNIQUE(invitation_id)
 );
 CREATE UNIQUE INDEX supplier_invitation_emails_id_org_key ON supplier_invitation_emails(id,organization_id);
+CREATE UNIQUE INDEX supplier_invitation_emails_invitation_org_key ON supplier_invitation_emails(invitation_id,organization_id);
 CREATE INDEX supplier_invitation_emails_due_idx ON supplier_invitation_emails(status,next_attempt_at,created_at);
 CREATE INDEX supplier_invitation_emails_org_created_idx ON supplier_invitation_emails(organization_id,created_at);
 ALTER TABLE supplier_invitation_emails ENABLE ROW LEVEL SECURITY;
