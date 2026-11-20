@@ -1,14 +1,21 @@
 import { prisma } from "../lib/prisma.js";
 import { withTenantContext } from "../auth/tenant-context.js";
-import { decryptInvitationEmail, invitationEmailRetryDelayMs, sendInvitationEmail } from "./invitation-email.js";
+import { decryptInvitationEmail, invitationEmailRetryDelayMs, isPermanentEmailProviderError, sendInvitationEmail } from "./invitation-email.js";
 type Job={id:string;organization_id:string;invitation_id:string;payload_ciphertext:string;payload_iv:string;payload_auth_tag:string;attempts:number;locked_at:Date};
 const MAX_ATTEMPTS=6,BATCH_SIZE=5,POLL_MS=5000;
 async function claim(org:string):Promise<Job[]>{
- return withTenantContext(org,tx=>tx.$queryRaw<Job[]>`
+ return withTenantContext(org,async tx=>{
+  const expired=await tx.supplierInvitationEmail.findMany({where:{organizationId:org,status:"PROCESSING",attempts:{gte:MAX_ATTEMPTS},lockedAt:{lt:new Date(Date.now()-2*60*1000)}},select:{id:true,invitationId:true,attempts:true,lockedAt:true}});
+  for(const job of expired){
+   const updated=await tx.supplierInvitationEmail.updateMany({where:{id:job.id,organizationId:org,status:"PROCESSING",lockedAt:job.lockedAt},data:{status:"FAILED",lockedAt:null,lastError:"Worker lease expired after maximum delivery attempts",updatedAt:new Date()}});
+   if(updated.count===1)await tx.auditLog.create({data:{organizationId:org,actorUserId:null,action:"supplier.invitation_email_failed",resourceType:"supplier_invitation",resourceId:job.invitationId,metadata:{deliveryId:job.id,attempts:job.attempts,reason:"worker_lease_expired"}}});
+  }
+  return tx.$queryRaw<Job[]>`
   WITH due AS (SELECT id FROM supplier_invitation_emails WHERE organization_id=${org}::uuid AND attempts<${MAX_ATTEMPTS} AND ((status='PENDING' AND next_attempt_at<=NOW()) OR (status='PROCESSING' AND locked_at<NOW()-INTERVAL '2 minutes')) ORDER BY next_attempt_at,created_at FOR UPDATE SKIP LOCKED LIMIT ${BATCH_SIZE})
   UPDATE supplier_invitation_emails e SET status='PROCESSING',attempts=e.attempts+1,locked_at=NOW(),last_error=NULL,updated_at=NOW() FROM due WHERE e.id=due.id
   RETURNING e.id,e.organization_id,e.invitation_id,e.payload_ciphertext,e.payload_iv,e.payload_auth_tag,e.attempts,e.locked_at
- `);
+ `;
+ });
 }
 async function finish(job:Job,status:"SENT"|"PENDING"|"FAILED",data:{messageId?:string|null;error?:string}={}){
  return withTenantContext(job.organization_id,async tx=>{
@@ -29,7 +36,7 @@ async function processJob(job:Job){
  }catch(error){
   const message=error instanceof Error?error.message:"Unknown email delivery failure";
   const statusCode=typeof error==="object"&&error!==null&&"statusCode" in error?Number((error as {statusCode:unknown}).statusCode):undefined;
-  const permanent=statusCode!==undefined&&statusCode>=400&&statusCode<500&&statusCode!==408&&statusCode!==429;
+  const permanent=isPermanentEmailProviderError(statusCode);
   const terminal=permanent||job.attempts>=MAX_ATTEMPTS;
   await finish(job,terminal?"FAILED":"PENDING",{error:message});
   console.warn("Supplier invitation email delivery failed",{deliveryId:job.id,attempt:job.attempts,terminal,error:message});
