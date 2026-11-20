@@ -112,7 +112,10 @@ async function processDelivery(delivery: ClaimedDelivery): Promise<void> {
 }
 
 export async function runWebhookWorker(): Promise<void> {
-  if (!process.env.WEBHOOK_ENCRYPTION_KEY) throw new Error("WEBHOOK_ENCRYPTION_KEY is required by the webhook worker");
+  if (!process.env.WEBHOOK_ENCRYPTION_KEY) {
+    console.info("Webhook delivery worker disabled: WEBHOOK_ENCRYPTION_KEY is not configured");
+    return;
+  }
   let stopping = false;
   let active = false;
   const stop = () => { stopping = true; };
