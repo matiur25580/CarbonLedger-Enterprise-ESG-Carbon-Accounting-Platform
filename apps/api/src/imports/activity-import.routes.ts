@@ -50,7 +50,9 @@ async function buildPreview(tx: PrismaTypes.TransactionClient, organizationId: s
   if (Buffer.byteLength(csvText, "utf8") > 1024 * 1024) return empty([{ rowNumber: 0, code: "FILE_TOO_LARGE", message: "CSV must not exceed 1 MiB" }]);
   if (parsed.error) return empty([{ rowNumber: 0, code: "CSV_FORMAT_INVALID", message: parsed.error }]);
   if (parsed.rows.length < 2) return empty([{ rowNumber: 0, code: "CSV_EMPTY", message: "CSV must contain a header and at least one data row" }]);
-  const [headers, ...dataRows] = parsed.rows;
+  const headers = parsed.rows[0];
+  const dataRows = parsed.rows.slice(1);
+  if (!headers) return empty([{ rowNumber: 1, code: "CSV_HEADERS_INVALID", message: "CSV header row is missing" }]);
   if (dataRows.length > 500) return empty([{ rowNumber: 0, code: "ROW_LIMIT_EXCEEDED", message: "CSV is limited to 500 data rows" }]);
   const duplicateHeaders = headers.filter((h, i) => headers.indexOf(h) !== i);
   const unknownHeaders = headers.filter((h) => !requiredHeaders.includes(h) && !optionalHeaders.includes(h));
