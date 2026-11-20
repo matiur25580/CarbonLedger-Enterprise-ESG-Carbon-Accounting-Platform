@@ -234,7 +234,7 @@ analyticsRouter.get("/supplier-review-health", async (req, res, next) => {
           else evidenceDecisionCounts.PENDING++;
         }
         const reviewDecision = latest?.reviews[0]?.decision ?? null;
-        const engagementState = !latest ? "NO_SUBMISSION"
+        const engagementState: "NO_SUBMISSION" | "AWAITING_REVIEW" | "APPROVED" | "REJECTED" | "NEEDS_CHANGES" = !latest ? "NO_SUBMISSION"
           : reviewDecision === "APPROVED" ? "APPROVED"
           : reviewDecision === "REJECTED" ? "REJECTED"
           : reviewDecision === "NEEDS_CHANGES" ? "NEEDS_CHANGES"
