@@ -6,7 +6,7 @@ Measure emissions. Govern sustainability data. Track reduction initiatives. Prod
 
 CarbonLedger is an enterprise software project built with the **PERN stack**: PostgreSQL, Express.js, React.js and Node.js. It is designed to help organizations collect activity data, calculate greenhouse-gas (GHG) emissions, manage suppliers and evidence, monitor reduction targets, and prepare structured sustainability disclosures.
 
-> **Project status:** Repository foundation. Capabilities described here are target product scope, not claims that every feature is implemented.
+> **Project status:** Phase 1 engineering foundation. Product capabilities described below are target scope unless explicitly marked implemented.
 
 ## Product goals
 
@@ -27,17 +27,70 @@ Sustainability and ESG teams, environmental and compliance officers, facility ma
 
 | Layer | Technology |
 |---|---|
-| Frontend | React, TypeScript, Vite |
-| UI | Tailwind CSS |
-| Client data | TanStack Query |
-| Backend | Node.js, Express.js, TypeScript |
-| Database | PostgreSQL |
+| Frontend | React 19, TypeScript, Vite |
+| Backend | Node.js 22+, Express 5, TypeScript |
+| Database | PostgreSQL 17 |
 | ORM and migrations | Prisma |
 | Validation | Zod |
-| API contract | REST and OpenAPI |
-| Testing | Vitest/Jest, Supertest, Playwright |
+| API | Versioned REST (/api/v1) |
 | Local infrastructure | Docker Compose |
 | CI | GitHub Actions |
+
+## Repository layout
+
+- apps/web — React application
+- apps/api — Express API and Prisma schema
+- apps/worker — background job runner in a later phase
+- packages/* — shared contracts and validation (introduced as domain modules require them)
+- docs/architecture — system design and decisions
+- docs/product — product requirements and roadmap
+- .github/workflows — CI quality gates
+
+## Quick start
+
+**Prerequisites:** Node.js 22+, Corepack/pnpm 10+, and Docker with Compose.
+
+1. Clone the repository and install dependencies:
+
+   `git clone https://github.com/matiur25580/CarbonLedger-Enterprise-ESG-Carbon-Accounting-Platform.git`
+   
+   `cd CarbonLedger-Enterprise-ESG-Carbon-Accounting-Platform`
+   
+   `corepack enable`
+   
+   `pnpm install`
+
+2. Create your local environment file:
+
+   `cp .env.example .env`
+
+3. Start PostgreSQL and generate Prisma Client:
+
+   `pnpm db:up`
+   
+   `pnpm db:generate`
+
+4. Apply the initial development migration:
+
+   `pnpm db:migrate -- --name init`
+
+5. Start the API and frontend:
+
+   `pnpm dev`
+
+   - Web: http://localhost:5173
+   - API liveness: http://localhost:4000/api/v1/health/live
+   - API readiness: http://localhost:4000/api/v1/health/ready
+
+The local database credentials in `.env.example` are for development only. Never reuse them in a deployed environment.
+
+## Engineering commands
+
+- `pnpm typecheck` — TypeScript checks across workspaces
+- `pnpm lint` — current static quality checks
+- `pnpm test` — workspace tests
+- `pnpm build` — production builds
+- `pnpm db:studio` — open Prisma Studio
 
 ## Architecture principles
 
@@ -48,23 +101,10 @@ Sustainability and ESG teams, environmental and compliance officers, facility ma
 5. Reports distinguish measured, estimated, missing and unverified data.
 6. Implemented, planned and illustrative functionality are clearly distinguished.
 
-## Repository layout
-
-- apps/web — React application
-- apps/api — Express API
-- apps/worker — background job runner in a later phase
-- packages/contracts — shared API contracts
-- packages/validation — shared validation schemas
-- docs/architecture — system design and decisions
-- docs/product — product requirements and roadmap
-- docs/security — security design and threat model
-- docs/database — schema and data dictionary
-- infra/docker — local infrastructure
-
 ## Engineering roadmap
 
-- [ ] Phase 0 — Product scope, architecture and repository foundation
-- [ ] Phase 1 — Workspace, local infrastructure and quality gates
+- [x] Phase 0 — Product scope, architecture and repository foundation
+- [x] Phase 1 — Workspace, local infrastructure and quality gates (initial foundation)
 - [ ] Phase 2 — Identity, organizations and tenant isolation
 - [ ] Phase 3 — Facilities, activity data and emission-factor catalogue
 - [ ] Phase 4 — Versioned Scope 1/2/3 calculation engine
@@ -76,7 +116,7 @@ Sustainability and ESG teams, environmental and compliance officers, facility ma
 - [ ] Phase 10 — Integrations, webhooks and background processing
 - [ ] Phase 11 — Security, performance, accessibility and production delivery
 
-See docs/product/mvp-scope.md and docs/architecture/system-design.md.
+See `docs/product/mvp-scope.md` and `docs/architecture/system-design.md`.
 
 ## Domain boundary
 
