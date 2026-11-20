@@ -6,7 +6,7 @@ Measure emissions. Govern sustainability data. Track reduction initiatives. Prod
 
 CarbonLedger is an enterprise software project built with the **PERN stack**: PostgreSQL, Express.js, React.js and Node.js. It is designed to help organizations collect activity data, calculate greenhouse-gas (GHG) emissions, manage suppliers and evidence, monitor reduction targets, and prepare structured sustainability disclosures.
 
-> **Project status:** Phase 2 identity, organization and tenant-security foundation implemented. Carbon accounting and ESG domain modules remain on the roadmap unless explicitly marked implemented.
+> **Project status:** Phase 3 facility, activity-data and emission-factor catalogue foundations implemented. Emissions calculation and reporting remain on the roadmap unless explicitly marked implemented.
 
 ## Product goals
 
@@ -105,6 +105,23 @@ Set a strong `JWT_ACCESS_SECRET` (at least 32 characters) in your local `.env`. 
 
 See `docs/security/identity-and-tenancy.md` for the threat model and production database-role requirements. CI provisions PostgreSQL, applies the migration, and runs a cross-tenant row-level-security integration test.
 
+## Facilities, activity data and factor API (Phase 3)
+
+All endpoints require a valid bearer access token and enforce the selected organization tenant:
+
+- GET/POST `/api/v1/facilities` — list and register facilities
+- PATCH `/api/v1/facilities/:facilityId/status` — activate/deactivate a facility (OWNER/ADMIN)
+- GET/POST `/api/v1/activity-records` — filter and capture activity records
+- POST `/api/v1/activity-records/:recordId/submit` — submit a draft or rejected record
+- POST `/api/v1/activity-records/:recordId/review` — approve/reject a submission (OWNER/ADMIN/AUDITOR; no self-review)
+- GET/POST `/api/v1/emission-factors` — browse and create source-backed factor versions
+- POST `/api/v1/emission-factors/:factorId/publish` — publish a draft factor (OWNER/ADMIN)
+- POST `/api/v1/emission-factors/:factorId/retire` — retire a published factor without editing its provenance (OWNER/ADMIN)
+
+Activity records retain facility, reporting period, quantity, unit, category, scope, source and workflow status. Emission factors retain source name/version, methodology, geography, unit, validity window, uncertainty and immutable version metadata after publication. The initial factor values are organization-managed; no sample or placeholder factor is treated as an authoritative official value. These modules do not calculate CO2e yet—that belongs to Phase 4.
+
+See `docs/domain/activity-data-and-factor-catalogue.md` for the domain rules and API behavior.
+
 ## Engineering commands
 
 - `pnpm typecheck` — TypeScript checks across workspaces
@@ -127,7 +144,7 @@ See `docs/security/identity-and-tenancy.md` for the threat model and production 
 - [x] Phase 0 — Product scope, architecture and repository foundation
 - [x] Phase 1 — Workspace, local infrastructure and quality gates (initial foundation)
 - [x] Phase 2 — Identity, organizations and tenant isolation
-- [ ] Phase 3 — Facilities, activity data and emission-factor catalogue
+- [x] Phase 3 — Facilities, activity data and emission-factor catalogue
 - [ ] Phase 4 — Versioned Scope 1/2/3 calculation engine
 - [ ] Phase 5 — ESG data collection, imports and data-quality workflows
 - [ ] Phase 6 — Supplier sustainability portal
