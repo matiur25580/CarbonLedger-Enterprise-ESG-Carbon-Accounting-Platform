@@ -14,8 +14,15 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     return;
   }
 
+  let claims;
   try {
-    const claims = verifyAccessToken(header.slice(7));
+    claims = verifyAccessToken(header.slice(7));
+  } catch {
+    res.status(401).json({ error: { code: "INVALID_TOKEN", message: "The access token is invalid or expired" } });
+    return;
+  }
+
+  try {
     const membership = await withTenantContext(claims.organizationId, (tx) =>
       tx.organizationMembership.findUnique({
         where: { organizationId_userId: { organizationId: claims.organizationId, userId: claims.sub } },
@@ -33,8 +40,8 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       email: membership.user.email
     };
     next();
-  } catch {
-    res.status(401).json({ error: { code: "INVALID_TOKEN", message: "The access token is invalid or expired" } });
+  } catch (error) {
+    next(error);
   }
 }
 
