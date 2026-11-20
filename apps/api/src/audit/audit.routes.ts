@@ -10,9 +10,7 @@ auditRouter.use(requireRole("OWNER", "ADMIN", "AUDITOR"));
 const dateRange = z.object({
   from: z.string().date().optional(),
   to: z.string().date().optional()
-}).strict().refine((value) => !value.from || !value.to || value.from <= value.to, {
-  message: "from must not follow to"
-});
+}).strict();
 
 const listQuery = dateRange.extend({
   action: z.string().min(1).max(120).optional(),
@@ -20,7 +18,9 @@ const listQuery = dateRange.extend({
   actorUserId: z.string().uuid().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).max(10000).default(0)
-}).strict();
+}).strict().refine((value) => !value.from || !value.to || value.from <= value.to, {
+  message: "from must not follow to"
+});
 
 const exportQuery = z.object({
   from: z.string().date(),
