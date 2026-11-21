@@ -3,6 +3,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { AuthRequest, requireRole } from "../auth/auth.middleware.js";
 import { withTenantContext } from "../auth/tenant-context.js";
+import { compareAndSetInitiativeStatus } from "./reduction-status.js";
 
 export const reductionRouter = Router();
 const decimalString = z.string().regex(/^(?:0|[1-9]\d{0,17})(?:\.\d{1,18})?$/);
@@ -78,10 +79,21 @@ reductionRouter.patch("/initiatives/:initiativeId/status",requireRole("OWNER","A
     const result=await withTenantContext(auth.organizationId,async tx=>{
       const existing=await tx.reductionInitiative.findFirst({where:{id:id.data,organizationId:auth.organizationId},select:{id:true,status:true}});
       if(!existing)return null;
-      const updated=await tx.reductionInitiative.update({where:{id_organizationId:{id:id.data,organizationId:auth.organizationId}},data:{status:body.data.status}});
+      const transition = await compareAndSetInitiativeStatus(
+        existing.status,
+        async (expectedStatus) => (await tx.reductionInitiative.updateMany({
+          where: { id: id.data, organizationId: auth.organizationId, status: expectedStatus },
+          data: { status: body.data.status }
+        })).count,
+        () => tx.reductionInitiative.findFirst({ where: { id: id.data, organizationId: auth.organizationId } })
+      );
+      if (!transition.ok) return "CONFLICT" as const;
+      const updated = transition.record;
+      if (!updated) return null;
       await tx.auditLog.create({data:{organizationId:auth.organizationId,actorUserId:auth.userId,action:"reduction.initiative_status_changed",resourceType:"reduction_initiative",resourceId:updated.id,metadata:{from:existing.status,to:updated.status}}});
       return updated;
     });
+    if(result === "CONFLICT"){res.status(409).json({error:{code:"INITIATIVE_STATUS_CONFLICT",message:"The initiative status changed in another request. Refresh and try again."}});return;}
     if(!result){res.status(404).json({error:{code:"INITIATIVE_NOT_FOUND",message:"Initiative not found"}});return;}
     res.status(200).json({initiative:result});
   }catch(error){next(error);}
