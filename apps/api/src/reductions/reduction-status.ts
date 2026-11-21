@@ -1,6 +1,6 @@
-export async function compareAndSetInitiativeStatus<T>(
-  expectedStatus: string,
-  update: (expectedStatus: string) => Promise<number>,
+export async function compareAndSetInitiativeStatus<TStatus extends string, T>(
+  expectedStatus: TStatus,
+  update: (expectedStatus: TStatus) => Promise<number>,
   load: () => Promise<T | null>,
 ): Promise<{ ok: true; record: T | null } | { ok: false }> {
   const changed = await update(expectedStatus);
