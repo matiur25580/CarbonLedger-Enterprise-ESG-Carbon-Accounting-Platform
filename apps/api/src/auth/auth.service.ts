@@ -62,6 +62,7 @@ export async function login(input: { email: string; password: string }) {
   return { user: { id: user.id, name: user.name, email: user.email }, organization: { ...membership.organization, role: membership.role }, ...session };
 }
 
+// Rotate refresh credentials atomically so a token can only be consumed once.
 export async function rotateRefreshToken(token: string) {
   const tokenHash = hashRefreshToken(token);
   const existing = await prisma.refreshToken.findUnique({ where: { tokenHash } });
