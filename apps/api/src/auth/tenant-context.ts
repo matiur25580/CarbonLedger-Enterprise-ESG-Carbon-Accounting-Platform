@@ -5,6 +5,7 @@ export async function withTenantContext<T>(
   organizationId: string,
   callback: (tx: Prisma.TransactionClient) => Promise<T>
 ): Promise<T> {
+  // Set tenant context transaction-locally so database row-level security scopes this unit of work.
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT set_config('app.current_tenant_id', ${organizationId}, true)`;
     return callback(tx);
