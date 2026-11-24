@@ -18,6 +18,7 @@ function csvCell(value: unknown): string {
   return `"${safe.replace(/"/g, '""')}"`;
 }
 
+// Aggregate a bounded, tenant-scoped result set for the analytics overview.
 analyticsRouter.get("/overview", async (req, res, next) => {
   const parsed = filters.safeParse(req.query);
   if (!parsed.success) {
