@@ -43,6 +43,7 @@ export class CalculationDomainError extends Error {
   constructor(public code: string, message: string) { super(message); }
 }
 
+// Select only published factors valid for the activity period, preferring exact geography.
 export function selectEmissionFactor(activity: ActivityInput, factors: FactorCandidate[]): FactorCandidate {
   const eligible = factors.filter((factor) =>
     factor.category === activity.category && factor.scope === activity.scope &&
