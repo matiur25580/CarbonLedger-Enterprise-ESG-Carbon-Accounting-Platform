@@ -47,6 +47,7 @@ function percentile(sorted: number[], fraction: number): number {
   return sorted[lower]! + (sorted[upper]! - sorted[lower]!) * (position - lower);
 }
 
+// Flag traceability, workflow, duplicate, and statistical anomalies without mutating source records.
 export function analyzeActivityQuality(records: QualityRecord[], now = new Date()) {
   const issues: QualityIssue[] = [];
   const byRecord = new Map<string, QualityIssueCode[]>();
