@@ -203,11 +203,17 @@ supplierRouter.post("/:supplierId/invitations",requireRole("OWNER","ADMIN"),asyn
   }catch(error){next(error)}
 });
 supplierRouter.get("/submissions",requireRole("OWNER","ADMIN","MEMBER","AUDITOR"),async(req,res,next)=>{
-  const query=z.object({limit:z.coerce.number().int().min(1).max(100).default(50)}).safeParse(req.query);
-  if(!query.success){res.status(400).json({error:{code:"VALIDATION_ERROR",message:"Invalid limit"}});return}
+  const query=z.object({limit:z.coerce.number().int().min(1).max(100).default(50),cursor:uuid.optional()}).safeParse(req.query);
+  if(!query.success){res.status(400).json({error:{code:"VALIDATION_ERROR",message:"Invalid submission pagination"}});return}
   try{const auth=(req as AuthRequest).auth!;
-    const submissions=await withTenantContext(auth.organizationId,tx=>tx.supplierSubmission.findMany({where:{organizationId:auth.organizationId},take:query.data.limit,orderBy:{submittedAt:"desc"},include:{supplier:{select:{id:true,name:true,contactEmail:true}},questionnaire:{select:{id:true,title:true,version:true}}}}));
-    res.status(200).json({submissions});
+    const submissions=await withTenantContext(auth.organizationId,tx=>tx.supplierSubmission.findMany({
+      where:{organizationId:auth.organizationId},
+      take:query.data.limit,
+      ...(query.data.cursor?{skip:1,cursor:{id:query.data.cursor}}:{}),
+      orderBy:[{submittedAt:"desc"},{id:"desc"}],
+      include:{supplier:{select:{id:true,name:true,contactEmail:true}},questionnaire:{select:{id:true,title:true,version:true}}}
+    }));
+    res.status(200).json({submissions,nextCursor:submissions.length===query.data.limit?submissions[submissions.length-1]?.id??null:null});
   }catch(error){next(error)}
 });
 
