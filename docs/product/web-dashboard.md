@@ -18,6 +18,6 @@ The API's configured `WEB_ORIGIN`, browser origin, credentialed CORS policy and 
 
 ## Current boundaries
 
-Navigation entries for Emissions, Activity data, Facilities, Suppliers, Reduction plans and Audit & compliance are product navigation placeholders in this milestone; the live overview and emissions export are connected. The dashboard does not fabricate demo KPI values when no calculation data exists. Empty states explain that metrics appear after source data is approved and calculated.
+The authenticated dashboard includes dedicated workspaces for activity data, facilities, suppliers, emission factors, reduction planning, data quality and audit & compliance, in addition to the live overview. The audit workspace is read-only and available to OWNER, ADMIN and AUDITOR roles. It supports date/action/resource filters, paginated tenant-scoped events, metadata inspection and bounded CSV export. The dashboard does not fabricate demo KPI values when no calculation data exists. Empty states explain that metrics appear after source data is approved and calculated.
 
 The overview reflects saved calculation snapshots and current supplier submission coverage. Supplier coverage is not verified emissions coverage, and reduction scenario values are planning estimates rather than measured reductions.
