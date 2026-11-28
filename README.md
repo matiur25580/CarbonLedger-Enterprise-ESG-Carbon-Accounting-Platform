@@ -110,14 +110,14 @@ Govern factor source, version, geography, unit, methodology and effective dates 
 
 <p align="center"><img src="docs/assets/dashboards/10-emission-factor-catalogue.svg" alt="Illustrative emission factor catalogue dashboard" width="100%"></p>
 
-**Implementation:** Factor catalogue API and immutable publish/retire rules are implemented. A dedicated catalogue management screen is future UI work; no official factor dataset is bundled.
+**Implementation:** Live authenticated catalogue workspace with source, version, geography, unit, methodology and validity filters; OWNER/ADMIN draft creation; and publish/retire lifecycle controls. No official factor dataset is bundled.
 
 ### 11 — Reduction targets and scenarios
 Compare manually defined baselines and target thresholds with planned initiative portfolios and scenario projections.
 
 <p align="center"><img src="docs/assets/dashboards/11-reduction-scenarios.svg" alt="Illustrative reduction targets and scenario planning dashboard" width="100%"></p>
 
-**Implementation:** Targets, initiatives and scenario APIs are implemented. Projections are planning estimates—not measured reductions—and the dedicated UI is future work.
+**Implementation:** Live reduction-planning workspace for target creation, initiative tracking, status changes and immutable scenario snapshots. Projections are planning estimates—not measured reductions—and do not automatically recalculate from inventory activity.
 
 ### 12 — Audit and reporting
 Inspect tenant-scoped audit events and export bounded emissions or audit records with integrity checks.
@@ -317,6 +317,7 @@ Deployment is intentionally left to the repository owner. Before manually deploy
 - [Web dashboard](docs/product/web-dashboard.md)
 - [Activity data workspace](docs/product/activity-data-workspace.md)
 - [Supplier workspace](docs/product/supplier-workspace.md)
+- [Reduction planning workspace](docs/product/reduction-planning-workspace.md)
 - [Calculation engine](docs/domain/calculation-engine.md)
 - [Data quality and reporting](docs/domain/analytics-and-reporting.md)
 - [Webhook delivery worker](docs/domain/webhook-delivery-worker.md)\n- [Supplier invitation email delivery](docs/security/supplier-invitation-email.md)
